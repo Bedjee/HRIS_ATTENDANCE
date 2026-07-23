@@ -1,0 +1,22 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class CheckMustChangePassword
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        if ($request->user() && $request->user()->must_change_password) {
+            // Allow access only to password change routes
+            if (! $request->routeIs('password.change*')) {
+                return redirect()->route('password.change');
+            }
+        }
+
+        return $next($request);
+    }
+}
