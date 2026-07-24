@@ -84,7 +84,9 @@ class EmployeeController extends Controller
     public function showQr(Employee $employee)
 {
     // Generate QR code as base64 data URI
-    $qrCode = QrCode::size(300)->generate($employee->qr_token);
+    $qrCode = QrCode::size(300)
+    ->margin(3)
+    ->generate($employee->qr_token);
     $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCode);
 
     return Inertia::render('HR/Employees/ShowQr', [

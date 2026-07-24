@@ -9,12 +9,20 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\Event;
 use Carbon\Carbon;
 
+
 class DashboardController extends Controller
 {
-    public function index(Request $request)
-    {
-        $user = $request->user();
-        $employee = $user->employee->load('department.cluster');
+   public function index(Request $request)
+{
+    $user = $request->user();
+    $employee = $user->employee;
+
+    if (!$employee) {
+        // ✅ Redirect to home or login with a clear message
+        return redirect()->route('home')->with('error', 'Your employee record was not found. Please contact HR.');
+    }
+
+    $employee->load('department.cluster');
 
         // Total events attended
         $totalEvents = $employee->attendances()->count();
@@ -41,13 +49,12 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Generate QR code as base64 SVG
-        $qrCode = QrCode::size(300)->generate($employee->qr_token);
+        // ✅ Generate QR code as base64 SVG (with margin)
+        $qrCode = QrCode::size(300)
+            ->margin(3)   // <-- ADD THIS (if not already)
+            ->generate($employee->qr_token);
         $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCode);
 
-        // Attendance rate (example: total events attended / total events overall? We'll use a placeholder)
-        // For simplicity, we can compute as (attended events / total events) * 100, but total events might not be relevant.
-        // We'll leave it as '—' for now or compute based on available events.
         $totalEventsAll = Event::count();
         $attendanceRate = $totalEventsAll > 0 ? round(($totalEvents / $totalEventsAll) * 100, 1) : 0;
 

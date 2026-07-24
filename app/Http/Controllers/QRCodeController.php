@@ -14,39 +14,37 @@ class QRCodeController extends Controller
      * Generate and return QR code image for the authenticated employee.
      */
     public function show(Request $request)
-    {
-        $user = $request->user();
-        $employee = $user->employee;
+{
+    $user = $request->user();
+    $employee = $user->employee;
 
-        if (!$employee) {
-            abort(404, 'Employee record not found.');
-        }
-
-        $qrCode = QrCode::size(300)
-            ->format('png')
-            ->generate($employee->qr_token);
-
-        return response($qrCode)
-            ->header('Content-Type', 'image/png');
+    if (!$employee) {
+        abort(404, 'Employee record not found.');
     }
 
-    /**
-     * Generate QR code for a specific employee (HR only).
-     */
-    public function showForEmployee(Request $request, Employee $employee)
-    {
-        // Ensure HR role
-        if (!$request->user()->isHr()) {
-            abort(403);
-        }
+    $qrCode = QrCode::size(300)
+        ->margin(3)   // <-- ADD THIS
+        ->format('png')
+        ->generate($employee->qr_token);
 
-        $qrCode = QrCode::size(300)
-            ->format('png')
-            ->generate($employee->qr_token);
+    return response($qrCode)
+        ->header('Content-Type', 'image/png');
+}
 
-        return response($qrCode)
-            ->header('Content-Type', 'image/png');
+public function showForEmployee(Request $request, Employee $employee)
+{
+    if (!$request->user()->isHr()) {
+        abort(403);
     }
+
+    $qrCode = QrCode::size(300)
+        ->margin(3)   // <-- ADD THIS
+        ->format('png')
+        ->generate($employee->qr_token);
+
+    return response($qrCode)
+        ->header('Content-Type', 'image/png');
+}
 
 
     public function page(Request $request)
@@ -59,7 +57,9 @@ class QRCodeController extends Controller
     }
 
     // Generate QR as base64 (same as dashboard)
-    $qrCode = QrCode::size(300)->generate($employee->qr_token);
+    $qrCode = QrCode::size(300)
+    ->margin(3)
+    ->generate($employee->qr_token);
     $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCode);
 
     return Inertia::render('Employee/QR', [
