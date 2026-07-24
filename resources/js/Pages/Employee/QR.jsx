@@ -1,4 +1,3 @@
-// resources/js/Pages/Employee/QR.jsx
 import { Head } from '@inertiajs/react';
 import EmployeeLayout from '@/Layouts/EmployeeLayout';
 import { Download, ArrowLeft } from 'lucide-react';
@@ -9,14 +8,20 @@ export default function QR({ auth, qrCodeData }) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      const size = 512;
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const link = document.createElement('a');
-      link.download = `qr-${auth.user.username}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      ctx.drawImage(img, 0, 0, size, size);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `qr-${auth.user.username}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
     };
     img.crossOrigin = 'anonymous';
     img.src = qrCodeData;
@@ -25,9 +30,6 @@ export default function QR({ auth, qrCodeData }) {
   return (
     <EmployeeLayout user={auth.user}>
       <Head title="My QR Code" />
-
-
-
       <div className="py-6">
         <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 mb-6">
@@ -39,7 +41,6 @@ export default function QR({ auth, qrCodeData }) {
             </Link>
             <h1 className="text-2xl font-bold text-navy-800">My QR Code</h1>
           </div>
-
           <div className="overflow-hidden rounded-xl bg-white shadow-lg">
             <div className="p-8 text-center">
               <div className="mx-auto max-w-xs">
@@ -50,7 +51,7 @@ export default function QR({ auth, qrCodeData }) {
                 />
               </div>
               <p className="mt-4 text-sm text-gray-500">
-                This is your permanent QR code. Present it to HR for attendance.
+                Your permanent QR code. Present it to HR for attendance.
               </p>
               <button
                 onClick={downloadQR}
