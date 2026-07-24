@@ -7,7 +7,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'HRIS';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

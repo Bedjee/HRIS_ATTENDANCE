@@ -109,6 +109,9 @@ Route::get('/employees/{employee}/qr', [EmployeeController::class, 'showQr'])
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('hr.employees.create');
 Route::post('/employees', [EmployeeController::class, 'store'])->name('hr.employees.store');
 
+Route::get('/employees/export-credentials', [EmployeeController::class, 'exportCredentials'])
+    ->name('hr.employees.export-credentials');
+
     // Events
     Route::get('/events', [EventController::class, 'index'])->name('hr.events.index');
     Route::get('/events/create', [EventController::class, 'create'])->name('hr.events.create');

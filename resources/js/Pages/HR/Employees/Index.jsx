@@ -5,7 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import SelectInput from '@/Components/SelectInput';
 import { toast } from 'react-hot-toast';
-import { QrCode,Plus  } from 'lucide-react';
+import { QrCode,Plus,Download   } from 'lucide-react';
 
 export default function Index({ auth, employees, clusters, departments, filters }) {
   const [search, setSearch] = useState(filters.search || '');
@@ -53,29 +53,30 @@ export default function Index({ auth, employees, clusters, departments, filters 
 
       <div className="py-8 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-  <div>
-    <h1 className="text-2xl font-bold text-navy-800 sm:text-3xl">Employees</h1>
-    <p className="text-sm text-gray-500">Manage your workforce</p>
-  </div>
-  <div className="flex flex-wrap items-center gap-2">
+   <div className="flex flex-wrap items-center gap-2">
     <Link href={route('hr.employees.create')}>
-      <PrimaryButton className="flex items-center whitespace-nowrap">
-        <Plus className="mr-2 h-4 w-4" />
-        Add Employee
-      </PrimaryButton>
+        <PrimaryButton className="flex items-center whitespace-nowrap">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Employee
+        </PrimaryButton>
     </Link>
     <Link href={route('hr.employees.import')}>
-      <PrimaryButton className="flex items-center whitespace-nowrap">
-        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Import Employees
-      </PrimaryButton>
+        <PrimaryButton className="flex items-center whitespace-nowrap">
+            <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Import Employees
+        </PrimaryButton>
     </Link>
-  </div>
+    <a
+        href={route('hr.employees.export-credentials')}
+        className="inline-flex items-center rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:ring-offset-2"
+    >
+        <Download className="mr-2 h-4 w-4" />
+        Export Credentials
+    </a>
 </div>
+
 
           {/* Filters */}
           <div className="mt-6 overflow-hidden rounded-xl bg-white shadow-sm">

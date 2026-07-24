@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers\HR;
-
+use App\Exports\EmployeesExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\User;
@@ -111,6 +112,12 @@ public function store(StoreEmployeeRequest $request, EmployeeImportService $impo
     } catch (\Exception $e) {
         return back()->with('error', 'Failed to create employee: ' . $e->getMessage());
     }
+}
+
+
+public function exportCredentials()
+{
+    return Excel::download(new EmployeesExport, 'employee_credentials.xlsx');
 }
 
 

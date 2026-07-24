@@ -54,10 +54,137 @@ class EmployeeImportService
     /**
      * Validate and parse the Excel file, returning an array of valid, duplicate, invalid records.
      */
-    public function previewImport($file): array
-    {
-        // ... (unchanged) ...
+  /**
+ * Validate and parse the Excel file, returning an array of valid, duplicate, invalid records.
+ */
+public function previewImport($file): array
+{
+    try {
+        // 1. Validate file
+        if (!$file->isValid()) {
+            throw new \Exception('Uploaded file is not valid.');
+        }
+
+        // 2. Increase memory for large files
+        ini_set('memory_limit', '512M');
+
+        // 3. Parse Excel
+        $rows = Excel::toArray([], $file)[0] ?? [];
+        if (empty($rows)) {
+            throw new \Exception('The Excel file appears to be empty.');
+        }
+
+        $headers = array_shift($rows);
+        if (empty($headers)) {
+            throw new \Exception('The Excel file does not contain a header row.');
+        }
+
+        // 4. Validate headers (case-insensitive)
+        $expectedHeaders = ['Last Name', 'First Name', 'Middle Initial', 'Department'];
+        $headerMap = [];
+        foreach ($expectedHeaders as $expected) {
+            $found = false;
+            foreach ($headers as $index => $header) {
+                if (strtolower(trim($header)) === strtolower($expected)) {
+                    $headerMap[$expected] = $index;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                throw new \Exception("Missing header: $expected");
+            }
+        }
+
+        // 5. Pre‑fetch all department names for quick lookup
+        $departmentMap = Department::pluck('id', 'name')->toArray();
+
+        // 6. Track duplicates within this import (by first_name + last_name + department_id)
+        $seen = [];
+        $valid = [];
+        $duplicates = [];
+        $invalid = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            $lastName = trim($row[$headerMap['Last Name']] ?? '');
+            $firstName = trim($row[$headerMap['First Name']] ?? '');
+            $middleInitial = trim($row[$headerMap['Middle Initial']] ?? '');
+            $departmentName = trim($row[$headerMap['Department']] ?? '');
+
+            $errors = [];
+            $departmentId = null;
+
+            // Basic validation
+            if (empty($lastName)) $errors[] = 'Last Name is required';
+            if (empty($firstName)) $errors[] = 'First Name is required';
+            if (empty($departmentName)) $errors[] = 'Department is required';
+
+            // Validate department exists
+            if (empty($errors) && !empty($departmentName)) {
+                $departmentId = $departmentMap[$departmentName] ?? null;
+                if (!$departmentId) {
+                    $errors[] = "Department '$departmentName' does not exist. Please create it first.";
+                }
+            }
+
+            // Duplicate check (only if no validation errors)
+            $isDuplicateInDb = false;
+            $isDuplicateInImport = false;
+            if (empty($errors) && $departmentId) {
+                // Check database for existing employee with same name and department
+                $exists = Employee::where('first_name', $firstName)
+                    ->where('last_name', $lastName)
+                    ->where('department_id', $departmentId)
+                    ->exists();
+                if ($exists) {
+                    $isDuplicateInDb = true;
+                }
+
+                // Check within the current import
+                $duplicateKey = $firstName . '|' . $lastName . '|' . $departmentId;
+                if (isset($seen[$duplicateKey])) {
+                    $isDuplicateInImport = true;
+                } else {
+                    $seen[$duplicateKey] = true;
+                }
+            }
+
+            $record = [
+                'row' => $rowIndex + 2, // human-readable row number (1-indexed + header)
+                'last_name' => $lastName,
+                'first_name' => $firstName,
+                'middle_initial' => $middleInitial,
+                'department_name' => $departmentName, // keep for display
+                'department_id' => $departmentId,     // will be used for import
+                'errors' => $errors,
+            ];
+
+            if (!empty($errors)) {
+                $invalid[] = $record;
+            } elseif ($isDuplicateInDb || $isDuplicateInImport) {
+                $record['duplicate_type'] = $isDuplicateInDb ? 'database' : 'import';
+                $duplicates[] = $record;
+            } else {
+                $valid[] = $record;
+            }
+        }
+
+        return [
+            'valid' => $valid,
+            'duplicates' => $duplicates,
+            'invalid' => $invalid,
+        ];
+
+    } catch (\Exception $e) {
+        // Log the error with full trace for debugging
+        \Log::error('Excel preview error: ' . $e->getMessage(), [
+            'file' => $file->getClientOriginalName(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+        // Re-throw to be caught by the controller
+        throw $e;
     }
+}
 
     /**
      * Import the validated records in chunks with optimized collision detection.
