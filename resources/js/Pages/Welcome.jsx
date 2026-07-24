@@ -123,7 +123,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                         ))}
                                     </div>
                                     <span className="text-xs sm:text-sm font-medium text-slate-700">
-                                        <span className="text-indigo-600 font-bold">12k+</span> employees
+                                        <span className="text-indigo-600 font-bold">400+</span> employees
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-1.5 text-xs sm:text-sm text-slate-500">
@@ -384,7 +384,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 {[
                                     { value: '99.9%', label: 'Uptime', icon: Shield },
                                     { value: '< 2s', label: 'Avg. Check-in', icon: Clock },
-                                    { value: '50k+', label: 'Daily scans', icon: QrCode },
+                                    { value: '30+', label: 'Daily scans', icon: QrCode },
                                     { value: '4.9★', label: 'User rating', icon: Award },
                                 ].map((stat, i) => (
                                     <div key={i} className="bg-slate-50/70 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center border border-slate-100/50 hover:border-indigo-100/50 transition-all duration-300 hover:shadow-md hover:-translate-y-1">

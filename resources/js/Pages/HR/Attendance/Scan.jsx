@@ -29,21 +29,44 @@ export default function Scan({ auth, events }) {
   const [status, setStatus] = useState(null);
   const [manualToken, setManualToken] = useState('');
   const [showDevTools, setShowDevTools] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const [lastScannedToken, setLastScannedToken] = useState(null);
+  const lastScanTimeRef = useRef(null);
   const scannerRef = useRef(null);
-  const timeoutRef = useRef(null);
+  const intervalRef = useRef(null);
 
-  // Auto‑dismiss status after 2.5 seconds
+  // Clear progress interval
+  const clearProgressInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  // When status changes, start/restart the progress countdown
   useEffect(() => {
     if (status) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
-        setStatus(null);
-        setLastResult(null);
-      }, 2500);
+      setProgress(100);
+      clearProgressInterval();
+
+      intervalRef.current = setInterval(() => {
+        setProgress((prev) => {
+          const next = prev - 3.33; // 100% in ~3 seconds
+          if (next <= 0) {
+            clearProgressInterval();
+            setStatus(null);
+            setLastResult(null);
+            return 0;
+          }
+          return next;
+        });
+      }, 100);
+    } else {
+      clearProgressInterval();
+      setProgress(100);
     }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+
+    return clearProgressInterval;
   }, [status]);
 
   // Update scanning state when event changes
@@ -53,6 +76,9 @@ export default function Scan({ auth, events }) {
     } else {
       setIsScanning(false);
     }
+    // Reset cooldown when event changes
+    setLastScannedToken(null);
+    lastScanTimeRef.current = null;
   }, [selectedEventId]);
 
   const handleScannerError = (err) => {
@@ -139,11 +165,27 @@ export default function Scan({ auth, events }) {
     }
   };
 
-  // Real scan handler
+  // Real scan handler with cooldown
   const handleScan = async (result) => {
     if (!result) return;
     if (status || processing) return;
+
     const token = result.text;
+    const now = Date.now();
+
+    // Ignore duplicate tokens within 3 seconds
+    if (
+      token === lastScannedToken &&
+      lastScanTimeRef.current &&
+      now - lastScanTimeRef.current < 3000
+    ) {
+      // Silent ignore – no toast, no error
+      return;
+    }
+
+    setLastScannedToken(token);
+    lastScanTimeRef.current = now;
+
     await processAttendance(token);
   };
 
@@ -170,65 +212,75 @@ export default function Scan({ auth, events }) {
     };
   };
 
-const renderStatusCard = () => {
-  if (!status) return null;
+  // Status card renderer with progress bar
+  const renderStatusCard = () => {
+    if (!status) return null;
 
-  const { type, data } = status;
-  let icon, bgColor, title;
+    const { type, data } = status;
+    let icon, bgColor, title;
 
-  if (type === 'success') {
-    icon = <CheckCircle className="h-8 w-8 text-white" />;
-    bgColor = 'bg-green-600';
-    title = 'Attendance Recorded!';
-  } else if (type === 'warning') {
-    icon = <AlertCircle className="h-8 w-8 text-white" />;
-    bgColor = 'bg-amber-500';
-    title = 'Already Checked In';
-  } else {
-    icon = <XCircle className="h-8 w-8 text-white" />;
-    bgColor = 'bg-red-600';
-    title = 'Error';
-  }
+    if (type === 'success') {
+      icon = <CheckCircle className="h-8 w-8 text-white" />;
+      bgColor = 'bg-green-600';
+      title = 'Attendance Recorded!';
+    } else if (type === 'warning') {
+      icon = <AlertCircle className="h-8 w-8 text-white" />;
+      bgColor = 'bg-amber-500';
+      title = 'Already Checked In';
+    } else {
+      icon = <XCircle className="h-8 w-8 text-white" />;
+      bgColor = 'bg-red-600';
+      title = 'Error';
+    }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-in fade-in duration-300">
-      <div className={`mx-auto w-full max-w-sm rounded-xl ${bgColor} p-4 text-center text-white shadow-lg animate-in slide-in-from-bottom-6 duration-300`}>
-        <div className="flex justify-center mb-1">
-          <div className="rounded-full bg-white/20 p-2">
-            {icon}
+    const progressColor = type === 'success' ? 'bg-green-400' :
+                          type === 'warning' ? 'bg-amber-400' :
+                          'bg-red-400';
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-in fade-in duration-300">
+        <div className={`mx-auto w-full max-w-sm rounded-xl ${bgColor} p-4 text-center text-white shadow-lg animate-in slide-in-from-bottom-6 duration-300 relative overflow-hidden`}>
+          <div className="flex justify-center mb-1">
+            <div className="rounded-full bg-white/20 p-2">
+              {icon}
+            </div>
           </div>
-        </div>
-        <h3 className="text-xl font-bold">{title}</h3>
-        {type === 'success' && (
-          <div className="mt-2 space-y-0.5 text-base">
-            <p className="font-semibold">{data.employee_name}</p>
-            <p className="text-xs opacity-90">{data.department}</p>
-            <p className="text-xs opacity-90">Event: {data.event_title}</p>
-            <p className="text-xs opacity-90">Time In: {formatTime(data.time_in)}</p>
+          <h3 className="text-xl font-bold">{title}</h3>
+          {type === 'success' && (
+            <div className="mt-2 space-y-0.5 text-base">
+              <p className="font-semibold">{data.employee_name}</p>
+              <p className="text-xs opacity-90">{data.department}</p>
+              <p className="text-xs opacity-90">Event: {data.event_title}</p>
+              <p className="text-xs opacity-90">Time In: {formatTime(data.time_in)}</p>
+            </div>
+          )}
+          {type === 'warning' && (
+            <div className="mt-2 space-y-0.5 text-base">
+              <p className="font-semibold">{data.employee_name}</p>
+              <p className="text-xs opacity-90">Already checked in at {formatTime(data.time_in)}</p>
+              <p className="text-xs opacity-90">Event: {data.event_title}</p>
+            </div>
+          )}
+          {type === 'error' && (
+            <div className="mt-2 text-base">
+              <p>{data.message}</p>
+              <p className="text-xs opacity-80 mt-1">Please try again.</p>
+            </div>
+          )}
+          <div className="mt-2 text-xs opacity-75">
+            Scanner will resume automatically...
           </div>
-        )}
-        {type === 'warning' && (
-          <div className="mt-2 space-y-0.5 text-base">
-            <p className="font-semibold">{data.employee_name}</p>
-            <p className="text-xs opacity-90">Already checked in at {formatTime(data.time_in)}</p>
-            <p className="text-xs opacity-90">Event: {data.event_title}</p>
+          {/* Progress bar */}
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-white/20">
+            <div
+              className={`h-full transition-all duration-100 ease-linear ${progressColor}`}
+              style={{ width: `${progress}%` }}
+            />
           </div>
-        )}
-        {type === 'error' && (
-          <div className="mt-2 text-base">
-            <p>{data.message}</p>
-            <p className="text-xs opacity-80 mt-1">Please try again.</p>
-          </div>
-        )}
-        <div className="mt-2 text-xs opacity-75">
-          Scanner will resume automatically...
         </div>
       </div>
-    </div>
-  );
-};
-
-
+    );
+  };
 
   return (
     <HRLayout user={auth.user}>

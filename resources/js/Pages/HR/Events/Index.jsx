@@ -42,24 +42,28 @@ export default function Index({ auth, events }) {
   };
 
   const confirmDelete = () => {
-    if (!eventToDelete) return;
-    const id = eventToDelete.id;
-    const title = eventToDelete.title;
-    setDeletingId(id);
-    router.delete(route('hr.events.destroy', id), {
-      onSuccess: () => {
-        toast.success('Event deleted successfully.');
-        setDeletingId(null);
-        setEventToDelete(null);
-      },
-      onError: (error) => {
-        const msg = error.response?.data?.message || 'Failed to delete event.';
-        toast.error(msg);
-        setDeletingId(null);
-        setEventToDelete(null);
-      },
-    });
-  };
+  if (!eventToDelete) return;
+  const id = eventToDelete.id;
+  const title = eventToDelete.title;
+  setDeletingId(id);
+  router.delete(route('hr.events.destroy', id), {
+    onSuccess: () => {
+      toast.success('Event deleted successfully.');
+      setModalOpen(false); // ✅ Close the modal
+      setDeletingId(null);
+      setEventToDelete(null);
+    },
+    onError: (error) => {
+      const msg = error.response?.data?.message || 'Failed to delete event.';
+      toast.error(msg);
+      setModalOpen(false); // ✅ Close the modal
+      setDeletingId(null);
+      setEventToDelete(null);
+    },
+  });
+};
+
+
 
   const getStatusColor = (status) => {
     const colors = {

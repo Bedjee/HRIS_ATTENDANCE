@@ -40,14 +40,19 @@ class EmployeeImportController extends Controller
     /**
      * Confirm and execute the import.
      */
-    public function confirm(Request $request)
-    {
-        $validRecords = $request->input('valid_records', []);
-        if (empty($validRecords)) {
-            return response()->json(['success' => false, 'message' => 'No valid records to import.'], 422);
-        }
+   public function confirm(Request $request)
+{
+    set_time_limit(0);
+    ini_set('memory_limit', '512M');
 
-        $result = $this->importService->import($validRecords);
-        return response()->json(['success' => true, 'data' => $result]);
+    $validRecords = $request->input('valid_records', []);
+    if (empty($validRecords)) {
+        return response()->json(['success' => false, 'message' => 'No valid records to import.'], 422);
     }
+
+    $result = $this->importService->import($validRecords);
+    return response()->json(['success' => true, 'data' => $result]);
+}
+
+
 }
