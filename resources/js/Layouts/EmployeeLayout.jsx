@@ -3,6 +3,7 @@ import { Link, router } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import LogoutButton from '@/Components/LogoutButton';
+import ThemeSwitcher from '@/Components/ThemeSwitcher';
 import {
   Menu,
   X,
@@ -12,7 +13,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 
-// Theme configuration
+// Theme configuration (matching the theme switcher and other pages)
 const themes = {
   navy: {
     sidebar: 'bg-navy-800 border-navy-700 text-navy-300 hover:bg-navy-700',
@@ -92,7 +93,6 @@ const themes = {
     logo: 'text-white',
   },
 };
-
 
 export default function EmployeeLayout({ children, user }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -182,7 +182,10 @@ export default function EmployeeLayout({ children, user }) {
               Employee Portal
             </span>
           </div>
-          <div className="flex items-center">
+
+          {/* Right side: Theme Switcher + User Dropdown */}
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher currentTheme={user?.theme || 'navy'} />
             <div className="relative">
               <Dropdown>
                 <Dropdown.Trigger>
@@ -196,14 +199,12 @@ export default function EmployeeLayout({ children, user }) {
                     </span>
                   </button>
                 </Dropdown.Trigger>
-             <Dropdown.Content>
-  <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
-  {/* Remove this line: */}
-  {/* <Dropdown.Link href={route('theme.select')}>Theme</Dropdown.Link> */}
-  <LogoutButton className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
-    Log Out
-  </LogoutButton>
-</Dropdown.Content>
+                <Dropdown.Content>
+                  <Dropdown.Link href={route('profile.edit')}>Profile</Dropdown.Link>
+                  <LogoutButton className="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                    Log Out
+                  </LogoutButton>
+                </Dropdown.Content>
               </Dropdown>
             </div>
           </div>
