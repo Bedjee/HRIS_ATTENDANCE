@@ -57,6 +57,10 @@ Route::middleware(['auth', 'must.change.password', 'role:employee'])->group(func
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
 
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])
+    ->name('profile.photo.update')
+    ->middleware(['auth', 'must.change.password', 'role:employee']);
+
     // Employee Attendance
 Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])
     ->name('employee.attendance')

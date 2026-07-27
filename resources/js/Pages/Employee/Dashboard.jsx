@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { formatDate, formatTime } from '@/utils/date';
 import { getTheme } from '@/utils/themes';
@@ -13,9 +14,12 @@ import {
   Sparkles,
   CalendarDays,
   MapPin,
+  X,
 } from 'lucide-react';
 
 export default function Dashboard({ auth, employee, stats, attendanceHistory, qrCodeData, upcomingEvents }) {
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -51,31 +55,37 @@ export default function Dashboard({ auth, employee, stats, attendanceHistory, qr
     img.src = qrCodeData;
   };
 
+  const profilePhoto = employee.profile_photo_url || '/default-avatar.png';
+
+  const openPhotoModal = () => setShowPhotoModal(true);
+  const closePhotoModal = () => setShowPhotoModal(false);
+
   return (
     <EmployeeLayout user={auth.user}>
       <Head title="Dashboard" />
+
       <div className="py-4 sm:py-6 lg:py-8">
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-          {/* Welcome Section – now theme-aware */}
-         <div className={`mb-6 rounded-xl ${t.bgSolid} p-4 text-white shadow-lg sm:p-6 lg:p-8`}>
-  <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-    <div>
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-yellow-300 sm:h-5 sm:w-5" />
-        <h1 className="text-lg font-bold sm:text-2xl lg:text-3xl">
-          {getGreeting()}, {employee.formatted_name}!
-        </h1>
-      </div>
-      <p className={`mt-0.5 text-xs ${t.textAccent} sm:text-sm`}>
-        {employee.department} · {employee.cluster}
-      </p>
-    </div>
-    <div className="flex flex-col items-start text-xs sm:items-end sm:text-sm">
-      <span className={t.textAccent}>{currentDate}</span>
-      <span className={`font-medium ${t.textLight}`}>{currentTime}</span>
-    </div>
-  </div>
-</div>
+          {/* Welcome Section */}
+          <div className={`mb-6 rounded-xl ${t.bgSolid} p-4 text-white shadow-lg sm:p-6 lg:p-8`}>
+            <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-yellow-300 sm:h-5 sm:w-5" />
+                  <h1 className="text-lg font-bold sm:text-2xl lg:text-3xl">
+                    {getGreeting()}, {employee.formatted_name}!
+                  </h1>
+                </div>
+                <p className={`mt-0.5 text-xs ${t.textAccent} sm:text-sm`}>
+                  {employee.department} · {employee.cluster}
+                </p>
+              </div>
+              <div className="flex flex-col items-start text-xs sm:items-end sm:text-sm">
+                <span className={t.textAccent}>{currentDate}</span>
+                <span className={`font-medium ${t.textLight}`}>{currentTime}</span>
+              </div>
+            </div>
+          </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -116,15 +126,27 @@ export default function Dashboard({ auth, employee, stats, attendanceHistory, qr
 
           {/* QR Code & Profile */}
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* Profile Card */}
             <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
-              <h3 className={`text-base font-semibold ${t.textHeading} sm:text-lg`}>Profile</h3>
-              <div className="mt-3 space-y-1.5 text-sm">
-                <div className="flex items-start">
-                  <User className="mr-2 h-4 w-4 text-gray-400" />
-                  <span className="text-gray-700">
-                    <strong>Name:</strong> {employee.formatted_name}
-                  </span>
+              <div className="flex items-center gap-4">
+                <div className="relative cursor-pointer" onClick={openPhotoModal}>
+                  <img
+                    src={profilePhoto}
+                    alt="Profile"
+                    className="h-16 w-16 rounded-full border-2 border-gray-200 object-cover sm:h-20 sm:w-20"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition group-hover:bg-black/20">
+                    <span className="text-xs text-white opacity-0 group-hover:opacity-100">View</span>
+                  </div>
                 </div>
+                <div>
+                  <h3 className={`text-base font-semibold ${t.textHeading} sm:text-lg`}>
+                    {employee.formatted_name}
+                  </h3>
+                  <p className="text-sm text-gray-500">{employee.department}</p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-1.5 text-sm border-t border-gray-100 pt-4">
                 <div className="flex items-start">
                   <Building2 className="mr-2 h-4 w-4 text-gray-400" />
                   <span className="text-gray-700">
@@ -146,6 +168,7 @@ export default function Dashboard({ auth, employee, stats, attendanceHistory, qr
               </div>
             </div>
 
+            {/* QR Code Card */}
             <div className="rounded-xl bg-white p-4 text-center shadow-sm sm:p-6">
               <h3 className={`text-base font-semibold ${t.textHeading} sm:text-lg`}>Your QR Code</h3>
               <div className="mt-3 flex justify-center">
@@ -232,6 +255,32 @@ export default function Dashboard({ auth, employee, stats, attendanceHistory, qr
           </div>
         </div>
       </div>
+
+      {/* Full‑screen Photo Modal with overlay, blur, and smooth animations */}
+      {showPhotoModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={closePhotoModal}
+        >
+          <div
+            className="relative max-w-4xl w-full animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closePhotoModal}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-8 w-8" />
+            </button>
+            <img
+              src={profilePhoto}
+              alt="Profile"
+              className="w-full h-auto rounded-lg object-contain max-h-[90vh] shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </EmployeeLayout>
   );
 }

@@ -67,6 +67,7 @@ class DashboardController extends Controller
                 'username' => $user->username,
                 'qr_token' => $employee->qr_token,
                 'theme' => $user->theme ?? 'navy',
+                'profile_photo_url' => $employee->profile_photo_url, // ✅ add this
             ],
             'stats' => [
                 'total_events' => $totalEvents,

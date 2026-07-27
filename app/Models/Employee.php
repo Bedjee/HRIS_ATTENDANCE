@@ -18,7 +18,7 @@ class Employee extends Model
     'qr_token',
 ];
 
-    protected $appends = ['full_name', 'formatted_name'];
+    protected $appends = ['full_name', 'formatted_name', 'profile_photo_url'];
 
     // Relationship: an employee belongs to a user
     public function user()
@@ -64,4 +64,13 @@ class Employee extends Model
 {
     return $this->belongsToMany(Event::class, 'event_employee');
 }
+
+
+public function getProfilePhotoUrlAttribute()
+{
+    return $this->profile_photo
+        ? asset('storage/' . $this->profile_photo)
+        : null;
+}
+
 }

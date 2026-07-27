@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,27 +16,27 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): Response
-    {
-        $user = $request->user();
-        $employee = $user->employee;
+   public function edit(Request $request): Response
+{
+    $user = $request->user();
+    $employee = $user->employee;
 
-        return Inertia::render('Profile/Edit', [
-            'user' => [
-                'id' => $user->id,
-                'username' => $user->username,
-                'theme' => $user->theme ?? 'navy', // ✅ add theme
-            ],
-            'employee' => [
-                'id' => $employee->id,
-                'first_name' => $employee->first_name,
-                'middle_initial' => $employee->middle_initial,
-                'last_name' => $employee->last_name,
-                'full_name' => $employee->full_name,
-
-            ],
-        ]);
-    }
+    return Inertia::render('Profile/Edit', [
+        'user' => [
+            'id' => $user->id,
+            'username' => $user->username,
+            'theme' => $user->theme ?? 'navy',
+        ],
+        'employee' => [
+            'id' => $employee->id,
+            'first_name' => $employee->first_name,
+            'middle_initial' => $employee->middle_initial,
+            'last_name' => $employee->last_name,
+            'full_name' => $employee->full_name,
+            'profile_photo_url' => $employee->profile_photo_url, // ✅ add this
+        ],
+    ]);
+}
 
     /**
      * Update the employee's profile information.
@@ -103,6 +104,27 @@ class ProfileController extends Controller
     $user->save();
 
     return redirect()->back()->with('success', 'Theme updated.');
+}
+
+public function updatePhoto(Request $request)
+{
+    $request->validate([
+        'photo' => ['required', 'image', 'max:2048'], // 2MB max
+    ]);
+
+    $user = $request->user();
+    $employee = $user->employee;
+
+    // Delete old photo if exists
+    if ($employee->profile_photo) {
+        Storage::disk('public')->delete($employee->profile_photo);
+    }
+
+    $path = $request->file('photo')->store('employee_photos', 'public');
+    $employee->profile_photo = $path;
+    $employee->save();
+
+    return redirect()->back()->with('success', 'Profile photo updated.');
 }
 
 
