@@ -24,6 +24,7 @@ class ProfileController extends Controller
             'user' => [
                 'id' => $user->id,
                 'username' => $user->username,
+                'theme' => $user->theme ?? 'navy', // ✅ add theme
             ],
             'employee' => [
                 'id' => $employee->id,
@@ -31,6 +32,7 @@ class ProfileController extends Controller
                 'middle_initial' => $employee->middle_initial,
                 'last_name' => $employee->last_name,
                 'full_name' => $employee->full_name,
+
             ],
         ]);
     }
@@ -90,4 +92,19 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+   public function updateTheme(Request $request)
+{
+    $request->validate([
+        'theme' => ['required', 'in:navy,crimson,brown,black,yellow,green,violet'],
+    ]);
+    $user = $request->user();
+    $user->theme = $request->theme;
+    $user->save();
+
+    return redirect()->back()->with('success', 'Theme updated.');
+}
+
+
+
 }

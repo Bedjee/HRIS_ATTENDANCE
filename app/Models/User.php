@@ -16,6 +16,7 @@ class User extends Authenticatable
         'role',
         'must_change_password',
         'status', // new
+         'theme', // new
     ];
 
     protected $hidden = [
@@ -53,4 +54,6 @@ class User extends Authenticatable
 {
     return $this->status === 'active';
 }
+
+
 }

@@ -66,6 +66,7 @@ class DashboardController extends Controller
                 'cluster' => $employee->department?->cluster?->name ?? '—',
                 'username' => $user->username,
                 'qr_token' => $employee->qr_token,
+                'theme' => $user->theme ?? 'navy',
             ],
             'stats' => [
                 'total_events' => $totalEvents,

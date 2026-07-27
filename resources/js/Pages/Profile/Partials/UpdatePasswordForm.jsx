@@ -1,12 +1,15 @@
 import { useRef } from 'react';
 import { useForm } from '@inertiajs/react';
+import { getTheme } from '@/utils/themes';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { Lock } from 'lucide-react';
 
-export default function UpdatePasswordForm() {
+export default function UpdatePasswordForm({ user }) {
+  const t = getTheme(user?.theme || 'navy');
+
   const passwordInput = useRef();
   const currentPasswordInput = useRef();
 
@@ -37,7 +40,7 @@ export default function UpdatePasswordForm() {
   return (
     <section className="space-y-6">
       <header>
-        <h2 className="text-lg font-medium text-navy-800">Change Password</h2>
+        <h2 className={`text-lg font-medium ${t.textHeading}`}>Change Password</h2>
         <p className="mt-1 text-sm text-gray-600">Update your account password.</p>
       </header>
 
@@ -52,7 +55,7 @@ export default function UpdatePasswordForm() {
               type="password"
               value={data.current_password}
               onChange={(e) => setData('current_password', e.target.value)}
-              className="block w-full rounded-lg border-gray-300 pl-9 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+              className={`block w-full rounded-lg border-gray-300 pl-9 shadow-sm ${t.inputFocus}`}
               autoComplete="current-password"
             />
           </div>
@@ -69,7 +72,7 @@ export default function UpdatePasswordForm() {
               type="password"
               value={data.password}
               onChange={(e) => setData('password', e.target.value)}
-              className="block w-full rounded-lg border-gray-300 pl-9 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+              className={`block w-full rounded-lg border-gray-300 pl-9 shadow-sm ${t.inputFocus}`}
               autoComplete="new-password"
             />
           </div>
@@ -85,7 +88,7 @@ export default function UpdatePasswordForm() {
               type="password"
               value={data.password_confirmation}
               onChange={(e) => setData('password_confirmation', e.target.value)}
-              className="block w-full rounded-lg border-gray-300 pl-9 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+              className={`block w-full rounded-lg border-gray-300 pl-9 shadow-sm ${t.inputFocus}`}
               autoComplete="new-password"
             />
           </div>
@@ -93,7 +96,10 @@ export default function UpdatePasswordForm() {
         </div>
 
         <div className="flex items-center gap-4">
-          <PrimaryButton disabled={processing} className="bg-navy-700 hover:bg-navy-800">
+          <PrimaryButton
+            disabled={processing}
+            className={`${t.bgButton} ${t.hoverButton}`}
+          >
             {processing ? 'Updating...' : 'Update Password'}
           </PrimaryButton>
           {recentlySuccessful && (

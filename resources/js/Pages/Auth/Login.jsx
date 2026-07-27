@@ -1,13 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
-import { LogIn, User, Lock, QrCode, ArrowRight } from 'lucide-react';
+import { LogIn, User, Lock, QrCode, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
+    const [showPassword, setShowPassword] = useState(false);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         username: '',
         password: '',
@@ -113,18 +115,11 @@ export default function Login({ status, canResetPassword }) {
                                         <InputError message={errors.username} className="mt-1.5" />
                                     </div>
 
-                                    {/* Password */}
+                                    {/* Password with Show/Hide toggle */}
                                     <div>
                                         <div className="flex items-center justify-between">
-                                            <InputLabel htmlFor="password" value="Password" className="text-sm font-medium text-slate-700" />
-                                            {canResetPassword && (
-                                                <Link
-                                                    href={route('password.request')}
-                                                    className="text-sm font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none focus:underline transition-colors"
-                                                >
-                                                    Forgot password?
-                                                </Link>
-                                            )}
+
+
                                         </div>
                                         <div className="relative mt-1">
                                             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
@@ -132,14 +127,26 @@ export default function Login({ status, canResetPassword }) {
                                             </div>
                                             <TextInput
                                                 id="password"
-                                                type="password"
+                                                type={showPassword ? 'text' : 'password'}
                                                 name="password"
                                                 value={data.password}
-                                                className="block w-full rounded-xl border-slate-200 pl-9 sm:pl-12 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm sm:text-base"
+                                                className="block w-full rounded-xl border-slate-200 pl-9 sm:pl-12 pr-10 sm:pr-12 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm sm:text-base"
                                                 autoComplete="current-password"
                                                 onChange={(e) => setData('password', e.target.value)}
                                                 placeholder="Enter your password"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showPassword ? (
+                                                    <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                )}
+                                            </button>
                                         </div>
                                         <InputError message={errors.password} className="mt-1.5" />
                                     </div>
