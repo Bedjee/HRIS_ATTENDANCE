@@ -5,7 +5,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import SelectInput from '@/Components/SelectInput';
 import { toast } from 'react-hot-toast';
-import { QrCode,Plus,Download   } from 'lucide-react';
+
+import { QrCode, Plus, Download, User } from 'lucide-react';
 
 export default function Index({ auth, employees, clusters, departments, filters }) {
   const [search, setSearch] = useState(filters.search || '');
@@ -21,6 +22,7 @@ export default function Index({ auth, employees, clusters, departments, filters 
       department_id: departmentFilter,
     });
   };
+
 
   const handleResetPassword = (employeeId, employeeName) => {
     if (confirm(`Reset password for ${employeeName}?`)) {
@@ -42,7 +44,6 @@ export default function Index({ auth, employees, clusters, departments, filters 
     }
   };
 
-  // Filter departments based on selected cluster
   const filteredDepartments = departments.filter(
     (dept) => !clusterFilter || dept.cluster_id == clusterFilter
   );
@@ -53,30 +54,30 @@ export default function Index({ auth, employees, clusters, departments, filters 
 
       <div className="py-8 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-   <div className="flex flex-wrap items-center gap-2">
-    <Link href={route('hr.employees.create')}>
-        <PrimaryButton className="flex items-center whitespace-nowrap">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Employee
-        </PrimaryButton>
-    </Link>
-    <Link href={route('hr.employees.import')}>
-        <PrimaryButton className="flex items-center whitespace-nowrap">
-            <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Import Employees
-        </PrimaryButton>
-    </Link>
-    <a
-        href={route('hr.employees.export-credentials')}
-        className="inline-flex items-center rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:ring-offset-2"
-    >
-        <Download className="mr-2 h-4 w-4" />
-        Export Credentials
-    </a>
-</div>
-
+          {/* Header with buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={route('hr.employees.create')}>
+              <PrimaryButton className="flex items-center whitespace-nowrap">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employee
+              </PrimaryButton>
+            </Link>
+            <Link href={route('hr.employees.import')}>
+              <PrimaryButton className="flex items-center whitespace-nowrap">
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Import Employees
+              </PrimaryButton>
+            </Link>
+            <a
+              href={route('hr.employees.export-credentials')}
+              className="inline-flex items-center rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:ring-offset-2"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Credentials
+            </a>
+          </div>
 
           {/* Filters */}
           <div className="mt-6 overflow-hidden rounded-xl bg-white shadow-sm">
@@ -96,7 +97,7 @@ export default function Index({ auth, employees, clusters, departments, filters 
                     value={clusterFilter}
                     onChange={(e) => {
                       setClusterFilter(e.target.value);
-                      setDepartmentFilter(''); // reset department when cluster changes
+                      setDepartmentFilter('');
                     }}
                     className="block w-full"
                   >
@@ -159,6 +160,9 @@ export default function Index({ auth, employees, clusters, departments, filters 
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-6">
+                        Photo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-6">
                         Name
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-6">
@@ -178,6 +182,20 @@ export default function Index({ auth, employees, clusters, departments, filters 
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {employees.data.map((employee) => (
                       <tr key={employee.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 sm:px-6">
+  {employee.profile_photo_url ? (
+    <img
+      src={employee.profile_photo_url}
+      alt={employee.full_name}
+      className="h-8 w-8 rounded-full object-cover"
+      onError={(e) => { e.target.src = defaultAvatar; }}
+    />
+  ) : (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-500">
+      <User className="h-4 w-4" />
+    </div>
+  )}
+</td>
                         <td className="px-4 py-4 sm:px-6">
                           <div className="text-sm font-medium text-navy-800">
                             {employee.formatted_name}
@@ -199,9 +217,7 @@ export default function Index({ auth, employees, clusters, departments, filters 
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium sm:px-6">
                           <button
-                            onClick={() =>
-                              handleResetPassword(employee.id, employee.full_name)
-                            }
+                            onClick={() => handleResetPassword(employee.id, employee.full_name)}
                             disabled={resettingId === employee.id}
                             className="mr-2 inline-flex items-center rounded-md p-1.5 text-navy-600 hover:bg-navy-50 hover:text-navy-900 disabled:opacity-50"
                             title="Reset Password"

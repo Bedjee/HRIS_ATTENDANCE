@@ -15,7 +15,7 @@ class AttendanceService
     /**
      * Scan attendance using QR token.
      */
-    public function scanAttendance(string $qrToken, int $eventId): array
+     public function scanAttendance(string $qrToken, int $eventId): array
     {
         try {
             $employee = Employee::where('qr_token', $qrToken)->first();
@@ -23,13 +23,11 @@ class AttendanceService
                 return ['success' => false, 'message' => 'Invalid QR Code', 'data' => null];
             }
 
-            // ✅ Get event data as array (cached)
             $eventData = $this->getEventData($eventId);
             if (!$eventData) {
                 return ['success' => false, 'message' => 'Event not found', 'data' => null];
             }
 
-            // ✅ Required employee validation (cached)
             if ($eventData['attendance_mode'] !== 'all_employees') {
                 $requiredIds = $this->getRequiredEmployeeIds($eventId);
                 if (!in_array($employee->id, $requiredIds)) {
@@ -45,7 +43,6 @@ class AttendanceService
                 }
             }
 
-            // ✅ Attempt to insert (unique constraint prevents duplicates)
             try {
                 $attendance = DB::transaction(function () use ($employee, $eventId) {
                     return Attendance::create([
@@ -63,6 +60,7 @@ class AttendanceService
                         'department' => $employee->department?->name ?? 'Unassigned',
                         'time_in' => $attendance->time_in,
                         'event_title' => $eventData['title'],
+                        'profile_photo' => $employee->profile_photo_url,
                     ],
                 ];
             } catch (UniqueConstraintViolationException $e) {
@@ -78,6 +76,7 @@ class AttendanceService
                         'department' => $employee->department?->name ?? 'Unassigned',
                         'time_in' => $existing->time_in,
                         'event_title' => $eventData['title'],
+                        'profile_photo' => $employee->profile_photo_url,
                     ],
                 ];
             }
@@ -86,6 +85,7 @@ class AttendanceService
             return ['success' => false, 'message' => 'An error occurred.', 'data' => null];
         }
     }
+
 
     /**
      * Get event data as array (cached for 10 minutes).

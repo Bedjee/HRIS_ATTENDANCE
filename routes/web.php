@@ -49,6 +49,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/change-password', [PasswordChangeController::class, 'update'])
         ->name('password.update');
 
+         // Photo display route (no need for middleware again, it's already inside this group)
+    Route::get('/profile-photo/{employeeId}/{filename}', [ProfilePhotoController::class, 'show'])
+        ->name('profile.photo.show');
+
 
 
 });
@@ -61,16 +65,20 @@ Route::middleware(['auth', 'must.change.password', 'role:employee'])->group(func
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
 
-    Route::get('/profile-photo/{employeeId}/{filename}', [ProfilePhotoController::class, 'show'])
-    ->name('profile.photo.show')
-    ->middleware(['auth', 'must.change.password']);
+    // ✅ Add photo upload route
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])
+        ->name('profile.photo.update');
 
 
 
-    // Employee Attendance
-Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])
-    ->name('employee.attendance')
-    ->middleware('role:employee');
+    Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])
+        ->name('employee.attendance')
+        ->middleware('role:employee');
+
+
+
+
+
 });
 
 
