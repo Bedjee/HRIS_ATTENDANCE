@@ -218,117 +218,119 @@ export default function Scan({ auth, events }) {
   };
 
   // Status card renderer with progress bar and status
-  const renderStatusCard = () => {
-    if (!status) return null;
+ const renderStatusCard = () => {
+  if (!status) return null;
 
-    const { type, data } = status;
-    let icon, bgColor, title;
+  const { type, data } = status;
+  let icon, bgColor, title;
 
-    if (type === 'success') {
-      icon = <CheckCircle className="h-8 w-8 text-white" />;
-      bgColor = 'bg-green-600';
-      title = 'Attendance Recorded!';
-    } else if (type === 'warning') {
-      icon = <AlertCircle className="h-8 w-8 text-white" />;
-      bgColor = 'bg-amber-500';
-      title = 'Already Checked In';
-    } else {
-      icon = <XCircle className="h-8 w-8 text-white" />;
-      bgColor = 'bg-red-600';
-      title = 'Error';
-    }
+  if (type === 'success') {
+    icon = <CheckCircle className="h-8 w-8 text-white" />;
+    bgColor = 'bg-green-600';
+    title = 'Attendance Recorded!';
+  } else if (type === 'warning') {
+    icon = <AlertCircle className="h-8 w-8 text-white" />;
+    bgColor = 'bg-amber-500';
+    title = 'Already Checked In';
+  } else {
+    icon = <XCircle className="h-8 w-8 text-white" />;
+    bgColor = 'bg-red-600';
+    title = 'Error';
+  }
 
-    const progressColor =
-      type === 'success'
-        ? 'bg-green-400'
-        : type === 'warning'
-        ? 'bg-amber-400'
-        : 'bg-red-400';
+  const progressColor =
+    type === 'success'
+      ? 'bg-green-400'
+      : type === 'warning'
+      ? 'bg-amber-400'
+      : 'bg-red-400';
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-in fade-in duration-300">
-        <div
-          className={`mx-auto w-full max-w-sm rounded-xl ${bgColor} p-4 text-center text-white shadow-lg animate-in slide-in-from-bottom-6 duration-300 relative overflow-hidden`}
-        >
-          <div className="flex justify-center mb-1">
-            <div className="rounded-full bg-white/20 p-2">{icon}</div>
-          </div>
-          <h3 className="text-xl font-bold">{title}</h3>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-in fade-in duration-300">
+      <div
+        className={`mx-auto w-full max-w-sm rounded-xl ${bgColor} p-4 text-center text-white shadow-lg animate-in slide-in-from-bottom-6 duration-300 relative overflow-hidden`}
+      >
+        <div className="flex justify-center mb-1">
+          <div className="rounded-full bg-white/20 p-2">{icon}</div>
+        </div>
+        <h3 className="text-xl font-bold">{title}</h3>
 
-          {type === 'success' && (
-            <div className="mt-2 flex flex-col items-center space-y-1">
-              <img
-                src={data.profile_photo || defaultAvatar}
-                alt={data.employee_name}
-                className="h-12 w-12 rounded-full border-2 border-white object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = defaultAvatar;
-                }}
-              />
-              <p className="font-semibold">{data.employee_name}</p>
-              <p className="text-xs opacity-90">{data.department}</p>
-              <p className="text-xs opacity-90">
-                Time In: {formatTime(data.time_in)}
-              </p>
-              <p
-                className={`text-xs font-medium ${
-                  data.status === 'late' ? 'text-yellow-300' : 'text-white/90'
-                }`}
-              >
-                Status: {data.status === 'late' ? 'Late' : 'Present'}
-              </p>
-            </div>
-          )}
-
-          {type === 'warning' && (
-            <div className="mt-2 flex flex-col items-center space-y-1">
-              <img
-                src={data.profile_photo || defaultAvatar}
-                alt={data.employee_name}
-                className="h-12 w-12 rounded-full border-2 border-white object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = defaultAvatar;
-                }}
-              />
-              <p className="font-semibold">{data.employee_name}</p>
-              <p className="text-xs opacity-90">
-                Already checked in at {formatTime(data.time_in)}
-              </p>
-              <p className="text-xs opacity-90">Event: {data.event_title}</p>
-              <p
-                className={`text-xs font-medium ${
-                  data.status === 'late' ? 'text-yellow-300' : 'text-white/90'
-                }`}
-              >
-                Status: {data.status === 'late' ? 'Late' : 'Present'}
-              </p>
-            </div>
-          )}
-
-          {type === 'error' && (
-            <div className="mt-2 text-base">
-              <p>{data.message}</p>
-              <p className="text-xs opacity-80 mt-1">Please try again.</p>
-            </div>
-          )}
-
-          <div className="mt-2 text-xs opacity-75">
-            Scanner will resume automatically...
-          </div>
-
-          {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 h-1 w-full bg-white/20">
-            <div
-              className={`h-full transition-all duration-100 ease-linear ${progressColor}`}
-              style={{ width: `${progress}%` }}
+        {type === 'success' && (
+          <div className="mt-2 flex flex-col items-center space-y-1">
+            <img
+              src={data.profile_photo || defaultAvatar}
+              alt={data.employee_name}
+              className="h-20 w-20 rounded-full border-4 border-white object-cover sm:h-24 sm:w-24"
+              loading="lazy"
+              onError={(e) => {
+                e.target.src = defaultAvatar;
+              }}
             />
+            <p className="font-semibold text-base">{data.employee_name}</p>
+            <p className="text-xs opacity-90">{data.department}</p>
+            <p className="text-xs opacity-90">
+              Time In: {formatTime(data.time_in)}
+            </p>
+            <p
+              className={`text-xs font-medium ${
+                data.status === 'late' ? 'text-yellow-300' : 'text-white/90'
+              }`}
+            >
+              Status: {data.status === 'late' ? 'Late' : 'Present'}
+            </p>
           </div>
+        )}
+
+        {type === 'warning' && (
+          <div className="mt-2 flex flex-col items-center space-y-1">
+            <img
+              src={data.profile_photo || defaultAvatar}
+              alt={data.employee_name}
+              className="h-20 w-20 rounded-full border-4 border-white object-cover sm:h-24 sm:w-24"
+              loading="lazy"
+              onError={(e) => {
+                e.target.src = defaultAvatar;
+              }}
+            />
+            <p className="font-semibold text-base">{data.employee_name}</p>
+            <p className="text-xs opacity-90">
+              Already checked in at {formatTime(data.time_in)}
+            </p>
+            <p className="text-xs opacity-90">Event: {data.event_title}</p>
+            <p
+              className={`text-xs font-medium ${
+                data.status === 'late' ? 'text-yellow-300' : 'text-white/90'
+              }`}
+            >
+              Status: {data.status === 'late' ? 'Late' : 'Present'}
+            </p>
+          </div>
+        )}
+
+        {type === 'error' && (
+          <div className="mt-2 text-base">
+            <p>{data.message}</p>
+            <p className="text-xs opacity-80 mt-1">Please try again.</p>
+          </div>
+        )}
+
+        <div className="mt-2 text-xs opacity-75">
+          Scanner will resume automatically...
+        </div>
+
+        {/* Progress bar */}
+        <div className="absolute bottom-0 left-0 h-1 w-full bg-white/20">
+          <div
+            className={`h-full transition-all duration-100 ease-linear ${progressColor}`}
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
+
 
   return (
     <HRLayout user={auth.user}>
