@@ -16,7 +16,7 @@ class AttendanceService
     /**
      * Scan attendance using QR token.
      */
-    public function scanAttendance(string $qrToken, int $eventId): array
+   public function scanAttendance(string $qrToken, int $eventId): array
     {
         try {
             $employee = Employee::where('qr_token', $qrToken)->first();
@@ -45,9 +45,14 @@ class AttendanceService
             }
 
             try {
-                // Compute attendance status
-                $deadline = Carbon::parse($eventData['time'])->addMinutes($eventData['grace_period']);
-                $status = now()->lte($deadline) ? 'present' : 'late';
+                // ✅ Compute attendance status only if grace_period > 0
+                $gracePeriod = $eventData['grace_period'] ?? 0;
+                if ($gracePeriod > 0) {
+                    $deadline = Carbon::parse($eventData['time'])->addMinutes($gracePeriod);
+                    $status = now()->lte($deadline) ? 'present' : 'late';
+                } else {
+                    $status = 'present';
+                }
 
                 $attendance = DB::transaction(function () use ($employee, $eventId, $status) {
                     return Attendance::create([
@@ -94,6 +99,9 @@ class AttendanceService
         }
     }
 
+
+
+
     /**
      * Get event data as array (cached for 10 minutes).
      */
@@ -116,10 +124,11 @@ class AttendanceService
         });
     }
 
+
     /**
      * Get required employee IDs for an event (cached for 5 minutes).
      */
-    private function getRequiredEmployeeIds(int $eventId): array
+  private function getRequiredEmployeeIds(int $eventId): array
     {
         return Cache::remember("event_{$eventId}_required", 300, function () use ($eventId) {
             return Event::find($eventId)
@@ -129,10 +138,13 @@ class AttendanceService
         });
     }
 
+
+
+
     /**
      * Record manual attendance.
      */
-    public function manualAttendance(int $employeeId, int $eventId, int $userId, string $remarks, ?string $timeIn = null): array
+     public function manualAttendance(int $employeeId, int $eventId, int $userId, string $remarks, ?string $timeIn = null): array
     {
         try {
             $employee = Employee::find($employeeId);
@@ -170,8 +182,15 @@ class AttendanceService
             }
 
             $checkTime = $timeIn ? Carbon::parse($timeIn) : now();
-            $deadline = Carbon::parse($event->time)->addMinutes($event->grace_period);
-            $status = $checkTime->lte($deadline) ? 'present' : 'late';
+
+            // ✅ Only compute late if grace_period > 0
+            $gracePeriod = $event->grace_period ?? 0;
+            if ($gracePeriod > 0) {
+                $deadline = Carbon::parse($event->time)->addMinutes($gracePeriod);
+                $status = $checkTime->lte($deadline) ? 'present' : 'late';
+            } else {
+                $status = 'present';
+            }
 
             $attendance = DB::transaction(function () use ($employeeId, $eventId, $userId, $remarks, $checkTime, $status) {
                 return Attendance::create([

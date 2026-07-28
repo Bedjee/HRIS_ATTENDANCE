@@ -1,44 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { LogIn, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
-export default function Login({ status, canResetPassword }) {
+export default function NewPassword({ token, email }) {
     const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        username: '',
+        token: token,
+        email: email,
         password: '',
-        remember: false,
+        password_confirmation: '',
     });
 
     useEffect(() => {
         return () => {
-            reset('password');
+            reset('password', 'password_confirmation');
         };
     }, []);
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('login'));
+        post(route('password.store'));
     };
 
     return (
         <>
-            <Head title="Log in" />
+            <Head title="Reset Password" />
 
             <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
-                {/* Decorative background elements */}
+                {/* Background ornaments */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     <div className="absolute -top-[30%] -right-[10%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-indigo-100/30 rounded-full blur-3xl"></div>
                     <div className="absolute top-[40%] -left-[15%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-blue-100/20 rounded-full blur-3xl"></div>
                     <div className="absolute bottom-[10%] right-[20%] w-[200px] sm:w-[350px] h-[200px] sm:h-[350px] bg-violet-100/20 rounded-full blur-3xl"></div>
                 </div>
 
-                {/* Subtle grid pattern */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.02]"
                 style={{
                     backgroundImage: `radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)`,
@@ -46,13 +48,12 @@ export default function Login({ status, canResetPassword }) {
                 }}>
                 </div>
 
-                {/* Header with favicon logo */}
+                {/* Header */}
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8">
                     <Link href="/" className="inline-flex items-center space-x-2 group">
                         <div className="relative">
                             <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
                             <div className="relative p-1.5 sm:p-2 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-xl shadow-lg">
-                                {/* ✅ Use favicon.png from public folder */}
                                 <img
                                     src="/favicon.png"
                                     alt="Logo"
@@ -71,61 +72,29 @@ export default function Login({ status, canResetPassword }) {
                     </Link>
                 </div>
 
-                {/* Main content – mobile‑first spacing */}
-               <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] px-3 py-6 sm:py-12">
-    <div className="w-full max-w-sm mx-auto sm:max-w-md">
-        {/* Logo – no border or container */}
-        <div className="text-center mb-5 sm:mb-8">
-            <img
-                src="/favicon.png"
-                alt="Logo"
-                className="mx-auto h-12 w-12 sm:h-16 sm:w-16 object-contain"
-            />
-            <h2 className="mt-3 text-xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                Welcome Back
-            </h2>
-            <p className="mt-0.5 text-sm sm:text-base text-slate-500">
-                Sign in to your account
-            </p>
-        </div>
+                {/* Main content */}
+                <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] px-3 py-6 sm:py-12">
+                    <div className="w-full max-w-sm mx-auto sm:max-w-md">
+                        {/* Logo & header */}
+                        <div className="text-center mb-5 sm:mb-8">
+                            <img
+                                src="/favicon.png"
+                                alt="Logo"
+                                className="mx-auto h-12 w-12 sm:h-16 sm:w-16 object-contain"
+                            />
+                            <h2 className="mt-3 text-xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                                Set New Password
+                            </h2>
+                            <p className="mt-0.5 text-sm sm:text-base text-slate-500">
+                                Enter a new password for your account
+                            </p>
+                        </div>
 
-
-
-                        {/* Card – reduced padding on mobile */}
                         <div className="overflow-hidden rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-xl shadow-xl border border-white/50 sm:shadow-2xl">
                             <div className="p-5 sm:p-8">
-                                {status && (
-                                    <div className="mb-4 rounded-xl bg-emerald-50/80 backdrop-blur-sm p-3 text-sm font-medium text-emerald-800 border border-emerald-100/50">
-                                        {status}
-                                    </div>
-                                )}
-
                                 <form onSubmit={submit} className="space-y-4 sm:space-y-6">
-                                    {/* Username */}
                                     <div>
-                                        <InputLabel htmlFor="username" value="Username" className="text-sm font-medium text-slate-700" />
-                                        <div className="relative mt-1">
-                                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
-                                                <User className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
-                                            </div>
-                                            <TextInput
-                                                id="username"
-                                                type="text"
-                                                name="username"
-                                                value={data.username}
-                                                className="block w-full rounded-xl border-slate-200 pl-9 sm:pl-12 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm sm:text-base"
-                                                autoComplete="username"
-                                                isFocused={true}
-                                                onChange={(e) => setData('username', e.target.value)}
-                                                placeholder="Enter your username"
-                                            />
-                                        </div>
-                                        <InputError message={errors.username} className="mt-1.5" />
-                                    </div>
-
-                                    {/* Password with Show/Hide toggle */}
-                                    <div>
-
+                                        <InputLabel htmlFor="password" value="New Password" />
                                         <div className="relative mt-1">
                                             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
                                                 <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
@@ -136,9 +105,10 @@ export default function Login({ status, canResetPassword }) {
                                                 name="password"
                                                 value={data.password}
                                                 className="block w-full rounded-xl border-slate-200 pl-9 sm:pl-12 pr-10 sm:pr-12 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm sm:text-base"
-                                                autoComplete="current-password"
+                                                autoComplete="new-password"
+                                                isFocused={true}
                                                 onChange={(e) => setData('password', e.target.value)}
-                                                placeholder="Enter your password"
+                                                placeholder="Enter new password"
                                             />
                                             <button
                                                 type="button"
@@ -156,29 +126,40 @@ export default function Login({ status, canResetPassword }) {
                                         <InputError message={errors.password} className="mt-1.5" />
                                     </div>
 
-                                    {/* Remember Me */}
-                                    <div className="flex items-center justify-between">
-                                        <label className="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                name="remember"
-                                                checked={data.remember}
-                                                onChange={(e) => setData('remember', e.target.checked)}
-                                                className="rounded border-slate-300 text-indigo-600 shadow-sm focus:ring-indigo-500 focus:ring-offset-0"
+                                    <div>
+                                        <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
+                                        <div className="relative mt-1">
+                                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
+                                                <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
+                                            </div>
+                                            <TextInput
+                                                id="password_confirmation"
+                                                type={showPasswordConfirmation ? 'text' : 'password'}
+                                                name="password_confirmation"
+                                                value={data.password_confirmation}
+                                                className="block w-full rounded-xl border-slate-200 pl-9 sm:pl-12 pr-10 sm:pr-12 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm sm:text-base"
+                                                autoComplete="new-password"
+                                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                                placeholder="Confirm new password"
                                             />
-                                            <span className="ml-2 text-sm text-slate-600">Remember me</span>
-                                        </label>
-                                        <Link
-    href={route('password.request')}
-    className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors focus:outline-none focus:underline"
->
-    Forgot credentials?
-</Link>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)}
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                                                aria-label={showPasswordConfirmation ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showPasswordConfirmation ? (
+                                                    <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                )}
+                                            </button>
+                                        </div>
+                                        <InputError message={errors.password_confirmation} className="mt-1.5" />
                                     </div>
 
-                                    {/* Submit Button */}
                                     <PrimaryButton
-                                        className="group w-full justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 px-4 py-3 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.01] text-sm sm:text-base"
+                                        className="w-full justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 px-4 py-3 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.01] text-sm sm:text-base"
                                         disabled={processing}
                                     >
                                         {processing ? (
@@ -187,31 +168,26 @@ export default function Login({ status, canResetPassword }) {
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                                 </svg>
-                                                Signing in...
+                                                Resetting...
                                             </span>
                                         ) : (
-                                            <>
-                                                Sign in
-                                                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
-                                            </>
+                                            'Reset Password'
                                         )}
                                     </PrimaryButton>
                                 </form>
 
-                                {/* Footer */}
-                                <div className="mt-5 text-center text-sm text-slate-500">
-                                    Don't have an account?{' '}
+                                <div className="mt-6 text-center text-sm text-slate-500">
                                     <Link
-                                        href={route('register')}
-                                        className="font-medium text-indigo-600 hover:text-indigo-800 transition-colors focus:outline-none focus:underline"
+                                        href={route('login')}
+                                        className="inline-flex items-center font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                                     >
-                                        Register
+                                        <ArrowLeft className="h-4 w-4 mr-1" />
+                                        Back to Login
                                     </Link>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Version Info */}
                         <div className="mt-5 text-center text-xs text-slate-400">
                             QR Attendance System · Secure
                         </div>
