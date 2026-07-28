@@ -68,9 +68,13 @@ class Employee extends Model
 
 public function getProfilePhotoUrlAttribute()
 {
-    return $this->profile_photo
-        ? asset('storage/' . $this->profile_photo)
-        : null;
+    if (!$this->profile_photo) {
+        return null;
+    }
+    return route('profile.photo.show', [
+        'employeeId' => $this->id,
+        'filename' => basename($this->profile_photo),
+    ]);
 }
 
 }

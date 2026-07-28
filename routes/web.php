@@ -16,6 +16,7 @@ use App\Http\Controllers\HR\UserController;
 
 use App\Http\Controllers\HR\AnalyticsController;
 use App\Http\Controllers\HR\DepartmentController;
+use App\Http\Controllers\ProfilePhotoController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -47,6 +48,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('password.change');
     Route::post('/change-password', [PasswordChangeController::class, 'update'])
         ->name('password.update');
+
+
+
 });
 
 
@@ -57,9 +61,11 @@ Route::middleware(['auth', 'must.change.password', 'role:employee'])->group(func
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
 
-    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])
-    ->name('profile.photo.update')
-    ->middleware(['auth', 'must.change.password', 'role:employee']);
+    Route::get('/profile-photo/{employeeId}/{filename}', [ProfilePhotoController::class, 'show'])
+    ->name('profile.photo.show')
+    ->middleware(['auth', 'must.change.password']);
+
+
 
     // Employee Attendance
 Route::get('/employee/attendance', [EmployeeAttendanceController::class, 'index'])
