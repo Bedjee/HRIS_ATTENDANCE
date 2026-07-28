@@ -19,7 +19,6 @@ export default function ProfilePhotoUpload({ employee }) {
         setSelectedFile(file);
         setData('photo', file);
         setPreview(URL.createObjectURL(file));
-        // Reset input so same file can be re-selected
         e.target.value = '';
     };
 
@@ -31,6 +30,7 @@ export default function ProfilePhotoUpload({ employee }) {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success('Profile photo updated successfully!');
+                setSelectedFile(null);
                 router.reload();
             },
             onError: (errors) => {
@@ -57,13 +57,13 @@ export default function ProfilePhotoUpload({ employee }) {
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Photo preview and upload buttons – responsive */}
                 <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+                    {/* Photo preview – much larger */}
                     <div className="relative shrink-0">
                         <img
                             src={preview || '/default-avatar.png'}
                             alt="Profile"
-                            className="h-20 w-20 rounded-full border-2 border-gray-200 object-cover sm:h-24 sm:w-24"
+                            className="h-36 w-36 rounded-full border-2 border-gray-200 object-cover sm:h-48 sm:w-48"
                         />
                         {preview && preview !== employee.profile_photo_url && (
                             <button
@@ -76,42 +76,45 @@ export default function ProfilePhotoUpload({ employee }) {
                         )}
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:w-auto">
-                        <label
-                            htmlFor="photo-upload"
-                            className="inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 sm:w-auto"
-                        >
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload from Gallery
-                            <input
-                                ref={fileInputRef}
-                                id="photo-upload"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileChange(e, 'file')}
-                                className="hidden"
-                            />
-                        </label>
-                        <label
-                            htmlFor="photo-capture"
-                            className="inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 sm:w-auto"
-                        >
-                            <Camera className="mr-2 h-4 w-4" />
-                            Take Photo
-                            <input
-                                ref={cameraInputRef}
-                                id="photo-capture"
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                onChange={(e) => handleFileChange(e, 'camera')}
-                                className="hidden"
-                            />
-                        </label>
-                    </div>
+                    {/* Upload / Capture buttons – hidden when a file is selected */}
+                    {!selectedFile && (
+                        <div className="flex w-full flex-col gap-2 sm:w-auto">
+                            <label
+                                htmlFor="photo-upload"
+                                className="inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 sm:w-auto"
+                            >
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload from Gallery
+                                <input
+                                    ref={fileInputRef}
+                                    id="photo-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange(e, 'file')}
+                                    className="hidden"
+                                />
+                            </label>
+                            <label
+                                htmlFor="photo-capture"
+                                className="inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 sm:w-auto"
+                            >
+                                <Camera className="mr-2 h-4 w-4" />
+                                Take Photo
+                                <input
+                                    ref={cameraInputRef}
+                                    id="photo-capture"
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    onChange={(e) => handleFileChange(e, 'camera')}
+                                    className="hidden"
+                                />
+                            </label>
+                        </div>
+                    )}
                 </div>
 
-                {/* Submit button (only shows when a new photo is selected) */}
+                {/* Save / Cancel buttons – only show when a file is selected */}
                 {selectedFile && (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <button
