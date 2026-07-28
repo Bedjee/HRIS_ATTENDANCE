@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Carbon\Carbon;
 
 class AttendanceService
 {
     /**
      * Scan attendance using QR token.
      */
-     public function scanAttendance(string $qrToken, int $eventId): array
+    public function scanAttendance(string $qrToken, int $eventId): array
     {
         try {
             $employee = Employee::where('qr_token', $qrToken)->first();
@@ -44,11 +45,16 @@ class AttendanceService
             }
 
             try {
-                $attendance = DB::transaction(function () use ($employee, $eventId) {
+                // Compute attendance status
+                $deadline = Carbon::parse($eventData['time'])->addMinutes($eventData['grace_period']);
+                $status = now()->lte($deadline) ? 'present' : 'late';
+
+                $attendance = DB::transaction(function () use ($employee, $eventId, $status) {
                     return Attendance::create([
                         'employee_id' => $employee->id,
                         'event_id' => $eventId,
                         'time_in' => now(),
+                        'status' => $status,
                     ]);
                 });
 
@@ -61,6 +67,7 @@ class AttendanceService
                         'time_in' => $attendance->time_in,
                         'event_title' => $eventData['title'],
                         'profile_photo' => $employee->profile_photo_url,
+                        'status' => $status,
                     ],
                 ];
             } catch (UniqueConstraintViolationException $e) {
@@ -77,6 +84,7 @@ class AttendanceService
                         'time_in' => $existing->time_in,
                         'event_title' => $eventData['title'],
                         'profile_photo' => $employee->profile_photo_url,
+                        'status' => $existing->status,
                     ],
                 ];
             }
@@ -85,7 +93,6 @@ class AttendanceService
             return ['success' => false, 'message' => 'An error occurred.', 'data' => null];
         }
     }
-
 
     /**
      * Get event data as array (cached for 10 minutes).
@@ -103,6 +110,8 @@ class AttendanceService
                 'attendance_mode' => $event->attendance_mode,
                 'selected_clusters' => $event->selected_clusters,
                 'selected_departments' => $event->selected_departments,
+                'time' => $event->time,
+                'grace_period' => $event->grace_period,
             ];
         });
     }
@@ -155,18 +164,24 @@ class AttendanceService
                         'department' => $employee->department?->name ?? 'Unassigned',
                         'time_in' => $existing->time_in,
                         'event_title' => $event->title,
+                        'status' => $existing->status,
                     ],
                 ];
             }
 
-            $attendance = DB::transaction(function () use ($employeeId, $eventId, $userId, $remarks, $timeIn) {
+            $checkTime = $timeIn ? Carbon::parse($timeIn) : now();
+            $deadline = Carbon::parse($event->time)->addMinutes($event->grace_period);
+            $status = $checkTime->lte($deadline) ? 'present' : 'late';
+
+            $attendance = DB::transaction(function () use ($employeeId, $eventId, $userId, $remarks, $checkTime, $status) {
                 return Attendance::create([
                     'employee_id' => $employeeId,
                     'event_id' => $eventId,
-                    'time_in' => $timeIn ?? now(),
+                    'time_in' => $checkTime,
                     'is_manual' => true,
                     'recorded_by' => $userId,
                     'remarks' => $remarks,
+                    'status' => $status,
                 ]);
             });
 
@@ -178,6 +193,7 @@ class AttendanceService
                     'department' => $employee->department?->name ?? 'Unassigned',
                     'time_in' => $attendance->time_in,
                     'event_title' => $event->title,
+                    'status' => $status,
                 ],
             ];
         } catch (\Exception $e) {

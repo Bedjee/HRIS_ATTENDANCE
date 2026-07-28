@@ -15,17 +15,20 @@ class AnalyticsService
     /**
      * Get summary statistics (already fine).
      */
-    public function getSummaryStats($filters = [])
+   public function getSummaryStats($filters = [])
     {
         $totalEvents = Event::count();
         $totalEmployees = Employee::count();
         $totalAttendances = Attendance::count();
         $totalClusters = Cluster::count();
         $totalDepartments = Department::count();
+        $totalLate = Attendance::where('status', 'late')->count();
 
         $attendanceRate = 0;
+        $lateRate = 0;
         if ($totalEmployees > 0 && $totalEvents > 0) {
             $attendanceRate = round(($totalAttendances / ($totalEmployees * $totalEvents)) * 100, 2);
+            $lateRate = round(($totalLate / ($totalEmployees * $totalEvents)) * 100, 2);
         }
 
         return [
@@ -35,6 +38,8 @@ class AnalyticsService
             'attendance_rate' => $attendanceRate,
             'total_clusters' => $totalClusters,
             'total_departments' => $totalDepartments,
+            'total_late' => $totalLate,
+            'late_rate' => $lateRate,
         ];
     }
 
@@ -245,4 +250,147 @@ class AnalyticsService
 
         return $query->get();
     }
+
+
+
+     public function getLateByDepartment($filters = [])
+    {
+        $query = Department::query()
+            ->withCount(['employees' => function ($q) use ($filters) {
+                $q->whereHas('attendances', function ($sq) use ($filters) {
+                    $sq->where('status', 'late');
+                    if (!empty($filters['event_id'])) {
+                        $sq->where('event_id', $filters['event_id']);
+                    }
+                    if (!empty($filters['year'])) {
+                        $sq->whereYear('time_in', $filters['year']);
+                    }
+                });
+            }]);
+
+        if (!empty($filters['cluster_id'])) {
+            $query->where('cluster_id', $filters['cluster_id']);
+        }
+
+        $departments = $query->get();
+
+        $labels = $departments->pluck('name')->toArray();
+        $data = $departments->pluck('employees_count')->toArray();
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Late Employees',
+                    'data' => $data,
+                    'backgroundColor' => '#facc15',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Get late attendance by cluster.
+     */
+    public function getLateByCluster($filters = [])
+    {
+        $query = Cluster::query()
+            ->withCount(['employees' => function ($q) use ($filters) {
+                $q->whereHas('attendances', function ($sq) use ($filters) {
+                    $sq->where('status', 'late');
+                    if (!empty($filters['event_id'])) {
+                        $sq->where('event_id', $filters['event_id']);
+                    }
+                    if (!empty($filters['year'])) {
+                        $sq->whereYear('time_in', $filters['year']);
+                    }
+                });
+            }]);
+
+        $clusters = $query->get();
+
+        $labels = $clusters->pluck('name')->toArray();
+        $data = $clusters->pluck('employees_count')->toArray();
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Late Employees',
+                    'data' => $data,
+                    'backgroundColor' => ['#facc15', '#fde047', '#fef08a', '#fef9c3', '#fefce8'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Get monthly trend for present vs late.
+     */
+    public function getLateTrend($filters = [])
+    {
+        $year = $filters['year'] ?? Carbon::now()->year;
+
+        $query = Attendance::select(
+            DB::raw('MONTH(time_in) as month'),
+            DB::raw('COUNT(*) as total'),
+            DB::raw('SUM(CASE WHEN status = "late" THEN 1 ELSE 0 END) as late_count')
+        )
+            ->whereYear('time_in', $year)
+            ->groupBy('month')
+            ->orderBy('month');
+
+        if (!empty($filters['cluster_id'])) {
+            $query->whereHas('employee.department', function ($q) use ($filters) {
+                $q->where('cluster_id', $filters['cluster_id']);
+            });
+        }
+
+        if (!empty($filters['department_id'])) {
+            $query->whereHas('employee', function ($q) use ($filters) {
+                $q->where('department_id', $filters['department_id']);
+            });
+        }
+
+        if (!empty($filters['event_id'])) {
+            $query->where('event_id', $filters['event_id']);
+        }
+
+        $results = $query->get()->keyBy('month');
+
+        $months = range(1, 12);
+        $labels = [];
+        $presentData = [];
+        $lateData = [];
+
+        foreach ($months as $month) {
+            $labels[] = Carbon::createFromDate($year, $month, 1)->format('M');
+            $row = $results->get($month);
+            $presentData[] = $row ? $row->total - $row->late_count : 0;
+            $lateData[] = $row ? $row->late_count : 0;
+        }
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Present',
+                    'data' => $presentData,
+                    'borderColor' => '#22c55e',
+                    'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
+                    'fill' => true,
+                    'tension' => 0.4,
+                ],
+                [
+                    'label' => 'Late',
+                    'data' => $lateData,
+                    'borderColor' => '#facc15',
+                    'backgroundColor' => 'rgba(250, 204, 21, 0.1)',
+                    'fill' => true,
+                    'tension' => 0.4,
+                ],
+            ],
+        ];
+    }
+
 }

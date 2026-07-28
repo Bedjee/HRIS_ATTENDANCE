@@ -12,7 +12,7 @@ class Event extends Model
     protected $fillable = [
         'title', 'description', 'date', 'time', 'end_time',
         'venue', 'status', 'attendance_mode',
-        'selected_clusters', 'selected_departments'
+        'selected_clusters', 'selected_departments','grace_period', // new
     ];
 
     protected $casts = [

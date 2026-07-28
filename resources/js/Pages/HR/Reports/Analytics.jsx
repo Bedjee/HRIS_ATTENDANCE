@@ -37,7 +37,24 @@ ChartJS.register(
   Filler
 );
 
-export default function Analytics({ auth, summary, clusterData, departmentData, monthlyTrend, topEvents, leastEvents, topEmployees, inactiveEmployees, clusters, departments, events, filters }) {
+export default function Analytics({
+  auth,
+  summary,
+  clusterData,
+  departmentData,
+  monthlyTrend,
+  topEvents,
+  leastEvents,
+  topEmployees,
+  inactiveEmployees,
+  lateByDepartment,
+  lateByCluster,
+  lateTrend,
+  clusters,
+  departments,
+  events,
+  filters,
+}) {
   const [clusterFilter, setClusterFilter] = useState(filters.cluster_id || '');
   const [departmentFilter, setDepartmentFilter] = useState(filters.department_id || '');
   const [eventFilter, setEventFilter] = useState(filters.event_id || '');
@@ -60,7 +77,6 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
     router.get(route('hr.analytics'));
   };
 
-  // Filter departments by cluster for dropdown
   const filteredDepartments = departments.filter(
     (dept) => !clusterFilter || dept.cluster_id == clusterFilter
   );
@@ -101,7 +117,7 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Filters (unchanged) */}
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">
             <div className="p-4 sm:p-6">
               <div className="flex flex-wrap items-end gap-4">
@@ -177,7 +193,7 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
             </div>
           </div>
 
-          {/* Summary Cards */}
+          {/* Summary Cards – updated with Late */}
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <div className="rounded-xl bg-white p-4 shadow-sm text-center">
               <p className="text-sm text-gray-500">Events</p>
@@ -196,18 +212,18 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
               <p className="text-xl font-bold text-navy-800">{summary.attendance_rate}%</p>
             </div>
             <div className="rounded-xl bg-white p-4 shadow-sm text-center">
-              <p className="text-sm text-gray-500">Clusters</p>
-              <p className="text-xl font-bold text-navy-800">{summary.total_clusters}</p>
+              <p className="text-sm text-gray-500">Late</p>
+              <p className="text-xl font-bold text-yellow-600">{summary.total_late}</p>
             </div>
             <div className="rounded-xl bg-white p-4 shadow-sm text-center">
-              <p className="text-sm text-gray-500">Departments</p>
-              <p className="text-xl font-bold text-navy-800">{summary.total_departments}</p>
+              <p className="text-sm text-gray-500">Late Rate</p>
+              <p className="text-xl font-bold text-yellow-600">{summary.late_rate}%</p>
             </div>
           </div>
 
           {/* Charts Grid */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Attendance by Cluster (Doughnut) */}
+            {/* Attendance by Cluster (existing) */}
             <div className="rounded-xl bg-white p-4 shadow-sm">
               <h3 className="mb-4 text-center text-lg font-semibold text-navy-800">Attendance by Cluster</h3>
               <div className="h-64">
@@ -215,7 +231,7 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
               </div>
             </div>
 
-            {/* Attendance by Department (Bar) */}
+            {/* Attendance by Department (existing) */}
             <div className="rounded-xl bg-white p-4 shadow-sm">
               <h3 className="mb-4 text-center text-lg font-semibold text-navy-800">Attendance by Department</h3>
               <div className="h-64">
@@ -223,16 +239,40 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
               </div>
             </div>
 
-            {/* Monthly Trend (Line) */}
+            {/* Late by Department (new) */}
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <h3 className="mb-4 text-center text-lg font-semibold text-navy-800">Late by Department</h3>
+              <div className="h-64">
+                <Bar data={lateByDepartment} options={chartOptions} />
+              </div>
+            </div>
+
+            {/* Late by Cluster (new) */}
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <h3 className="mb-4 text-center text-lg font-semibold text-navy-800">Late by Cluster</h3>
+              <div className="h-64">
+                <Doughnut data={lateByCluster} options={chartOptions} />
+              </div>
+            </div>
+
+            {/* Monthly Trend (existing) */}
             <div className="rounded-xl bg-white p-4 shadow-sm lg:col-span-2">
               <h3 className="mb-4 text-center text-lg font-semibold text-navy-800">Monthly Attendance Trend</h3>
               <div className="h-64">
                 <Line data={monthlyTrend} options={lineOptions} />
               </div>
             </div>
+
+            {/* Present vs Late Trend (new) */}
+            <div className="rounded-xl bg-white p-4 shadow-sm lg:col-span-2">
+              <h3 className="mb-4 text-center text-lg font-semibold text-navy-800">Present vs Late Trend</h3>
+              <div className="h-64">
+                <Line data={lateTrend} options={lineOptions} />
+              </div>
+            </div>
           </div>
 
-          {/* Top & Least Events */}
+          {/* Top & Least Events (unchanged) */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl bg-white p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-navy-800">Most Attended Events</h3>
@@ -266,7 +306,7 @@ export default function Analytics({ auth, summary, clusterData, departmentData, 
             </div>
           </div>
 
-          {/* Top Employees & Inactive */}
+          {/* Top Employees & Inactive (unchanged) */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl bg-white p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-navy-800">Most Active Employees</h3>

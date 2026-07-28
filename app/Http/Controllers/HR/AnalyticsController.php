@@ -32,6 +32,11 @@ class AnalyticsController extends Controller
         $topEmployees = $this->analyticsService->getTopEmployees(5, $filters);
         $inactiveEmployees = $this->analyticsService->getInactiveEmployees(10, $filters);
 
+        // New late analytics
+        $lateByDepartment = $this->analyticsService->getLateByDepartment($filters);
+        $lateByCluster = $this->analyticsService->getLateByCluster($filters);
+        $lateTrend = $this->analyticsService->getLateTrend($filters);
+
         $clusters = Cluster::select('id', 'name')->get();
         $departments = Department::select('id', 'name', 'cluster_id')->get();
         $events = Event::select('id', 'title')->get();
@@ -45,6 +50,9 @@ class AnalyticsController extends Controller
             'leastEvents' => $leastEvents,
             'topEmployees' => $topEmployees,
             'inactiveEmployees' => $inactiveEmployees,
+            'lateByDepartment' => $lateByDepartment,
+            'lateByCluster' => $lateByCluster,
+            'lateTrend' => $lateTrend,
             'clusters' => $clusters,
             'departments' => $departments,
             'events' => $events,

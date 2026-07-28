@@ -60,17 +60,16 @@ class EventService
     }
 
     public function createEvent(array $data)
-    {
-        return DB::transaction(function () use ($data) {
-            Log::info('Creating event with data:', $data);
-            $event = Event::create($data);
-            $employeeIds = $this->computeEmployeeIds($data);
-            $event->requiredEmployees()->sync($employeeIds);
-            Log::info('Event created with ' . count($employeeIds) . ' required employees');
-            return $event;
-        });
-    }
-
+{
+    return DB::transaction(function () use ($data) {
+        Log::info('Creating event with data:', $data);
+        $event = Event::create($data);
+        $employeeIds = $this->computeEmployeeIds($data);
+        $event->requiredEmployees()->sync($employeeIds);
+        Log::info('Event created with ' . count($employeeIds) . ' required employees');
+        return $event;
+    });
+}
     public function updateEvent($id, array $data)
     {
         return DB::transaction(function () use ($id, $data) {

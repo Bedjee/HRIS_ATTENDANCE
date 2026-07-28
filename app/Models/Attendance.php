@@ -15,10 +15,19 @@ class Attendance extends Model
     'employee_id',
     'event_id',
     'time_in',
+     'status', // new
     'is_manual',
     'recorded_by',
     'remarks',
+
+
 ];
+
+protected $casts = [
+    'status' => 'string',
+];
+
+
 
     // Each attendance belongs to an employee
     public function employee()

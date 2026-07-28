@@ -32,18 +32,17 @@ class EventController extends Controller
     return Inertia::render('HR/Events/Index', ['events' => $events]);
 }
 
-    public function create()
-    {
-        $clusters = Cluster::select('id', 'name')->get();
-        $departments = Department::select('id', 'name', 'cluster_id')->get();
-        $employees = Employee::with('department')->get(['id', 'first_name', 'last_name', 'department_id']);
-        return Inertia::render('HR/Events/Create', [
-            'clusters' => $clusters,
-            'departments' => $departments,
-            'employees' => $employees,
-        ]);
-    }
-
+   public function create()
+{
+    $clusters = Cluster::select('id', 'name')->get();
+    $departments = Department::select('id', 'name', 'cluster_id')->get();
+    $employees = Employee::with('department')->get(['id', 'first_name', 'last_name', 'department_id']);
+    return Inertia::render('HR/Events/Create', [
+        'clusters' => $clusters,
+        'departments' => $departments,
+        'employees' => $employees,
+    ]);
+}
     public function store(StoreEventRequest $request)
     {
         try {
@@ -179,78 +178,94 @@ public function required(Event $event)
      * Attendance Details page – final outcome (Present / Absent) with manual attendance support.
      */
     public function attendance(Event $event)
-    {
-        // Get all required employees with department and cluster
-        $requiredEmployees = $event->requiredEmployees()
-            ->with(['department.cluster', 'user'])
-            ->get();
+{
+    $requiredEmployees = $event->requiredEmployees()
+        ->with(['department.cluster', 'user'])
+        ->get();
 
-        // Present records: employee_id => time_in
-        $presentRecords = Attendance::where('event_id', $event->id)
-            ->pluck('time_in', 'employee_id');
+    $presentRecords = Attendance::where('event_id', $event->id)
+        ->pluck('time_in', 'employee_id');
 
-        // Determine if event has ended
-        $eventDate = Carbon::parse($event->date . ' ' . $event->time);
-        $isPast = $eventDate->isPast();
+    $eventDate = Carbon::parse($event->date . ' ' . $event->time);
+    $isPast = $eventDate->isPast();
 
-        $present = collect();
-        $absent = collect();
+    $present = collect();
+    $absent = collect();
+    $late = collect();
 
-        foreach ($requiredEmployees as $emp) {
-            $attTime = $presentRecords->get($emp->id);
-            if ($attTime) {
+    foreach ($requiredEmployees as $emp) {
+        $attTime = $presentRecords->get($emp->id);
+        if ($attTime) {
+            $attendance = Attendance::where('employee_id', $emp->id)
+                ->where('event_id', $event->id)
+                ->first();
+            if ($attendance->status === 'late') {
+                $late->push([
+                    'id' => $emp->id,
+                    'employee_name' => $emp->full_name,
+                    'department' => $emp->department?->name ?? 'Unassigned',
+                    'cluster' => $emp->department?->cluster?->name ?? '—',
+                    'time_in' => $attTime,
+                    'status' => $attendance->status,
+                ]);
+            } else {
                 $present->push([
                     'id' => $emp->id,
                     'employee_name' => $emp->full_name,
                     'department' => $emp->department?->name ?? 'Unassigned',
                     'cluster' => $emp->department?->cluster?->name ?? '—',
                     'time_in' => $attTime,
-                ]);
-            } elseif ($isPast) {
-                $absent->push([
-                    'id' => $emp->id,
-                    'employee_name' => $emp->full_name,
-                    'department' => $emp->department?->name ?? 'Unassigned',
-                    'cluster' => $emp->department?->cluster?->name ?? '—',
+                    'status' => $attendance->status,
                 ]);
             }
-        }
-
-        // Build a simplified list for the manual attendance modal (searchable)
-        $requiredEmployeesList = $requiredEmployees->map(function ($emp) {
-            return [
+        } elseif ($isPast) {
+            $absent->push([
                 'id' => $emp->id,
-                'name' => $emp->full_name,
+                'employee_name' => $emp->full_name,
                 'department' => $emp->department?->name ?? 'Unassigned',
                 'cluster' => $emp->department?->cluster?->name ?? '—',
-            ];
-        })->values();
-
-        $clusters = Cluster::select('id', 'name')->get();
-        $departments = Department::select('id', 'name', 'cluster_id')->get();
-
-        return Inertia::render('HR/Events/Attendance', [
-            'event' => [
-                'id' => $event->id,
-                'title' => $event->title,
-                'date' => $event->date,
-                'time' => $event->time,
-                'venue' => $event->venue,
-                'attendance_mode' => $event->attendance_mode,
-            ],
-            'summary' => [
-                'total_required' => $requiredEmployees->count(),
-                'total_present' => $present->count(),
-                'total_absent' => $absent->count(),
-            ],
-            'present' => $present->values(),
-            'absent' => $absent->values(),
-            'requiredEmployees' => $requiredEmployeesList, // <-- Added for manual attendance
-            'clusters' => $clusters,
-            'departments' => $departments,
-            'isPast' => $isPast,
-        ]);
+            ]);
+        }
     }
+
+    // Build required employees list for manual attendance modal
+    $requiredEmployeesList = $requiredEmployees->map(function ($emp) {
+        return [
+            'id' => $emp->id,
+            'name' => $emp->full_name,
+            'department' => $emp->department?->name ?? 'Unassigned',
+            'cluster' => $emp->department?->cluster?->name ?? '—',
+        ];
+    })->values();
+
+    $clusters = Cluster::select('id', 'name')->get();
+    $departments = Department::select('id', 'name', 'cluster_id')->get();
+
+    return Inertia::render('HR/Events/Attendance', [
+        'event' => [
+            'id' => $event->id,
+            'title' => $event->title,
+            'date' => $event->date,
+            'time' => $event->time,
+            'venue' => $event->venue,
+            'attendance_mode' => $event->attendance_mode,
+            'grace_period' => $event->grace_period,
+        ],
+        'summary' => [
+            'total_required' => $requiredEmployees->count(),
+            'total_present' => $present->count(),
+            'total_absent' => $absent->count(),
+            'total_late' => $late->count(),
+        ],
+        'present' => $present->values(),
+        'absent' => $absent->values(),
+        'late' => $late->values(),
+        'requiredEmployees' => $requiredEmployeesList,
+        'clusters' => $clusters,
+        'departments' => $departments,
+        'isPast' => $isPast,
+    ]);
+}
 
 
 

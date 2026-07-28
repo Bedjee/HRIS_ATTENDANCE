@@ -21,7 +21,6 @@ import {
   MapPin,
 } from 'lucide-react';
 
-// Default avatar fallback (SVG data URI)
 const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23e2e8f0'/%3E%3Ctext x='20' y='26' text-anchor='middle' font-size='18' font-family='sans-serif' fill='%2394a3b8'%3E%3C/text%3E%3C/svg%3E";
 
 export default function Scan({ auth, events }) {
@@ -35,7 +34,6 @@ export default function Scan({ auth, events }) {
   const [progress, setProgress] = useState(100);
   const [lastScannedToken, setLastScannedToken] = useState(null);
   const lastScanTimeRef = useRef(null);
-  const scannerRef = useRef(null);
   const intervalRef = useRef(null);
 
   // Clear progress interval
@@ -130,6 +128,7 @@ export default function Scan({ auth, events }) {
             time_in: data.data.time_in,
             event_title: data.data.event_title,
             profile_photo: data.data.profile_photo || null,
+            status: data.data.status || 'present',
           },
         });
         toast.success(`${data.data.employee_name} checked in.`, { duration: 2000 });
@@ -142,6 +141,7 @@ export default function Scan({ auth, events }) {
             time_in: data.data.time_in,
             event_title: data.data.event_title,
             profile_photo: data.data.profile_photo || null,
+            status: data.data.status || 'present',
             message: data.message,
           },
         });
@@ -203,9 +203,9 @@ export default function Scan({ auth, events }) {
     await processAttendance(manualToken.trim());
   };
 
-  const toggleDevTools = () => setShowDevTools(prev => !prev);
+  const toggleDevTools = () => setShowDevTools((prev) => !prev);
 
-  const selectedEvent = events.find(e => e.id == selectedEventId);
+  const selectedEvent = events.find((e) => e.id == selectedEventId);
 
   // Helper to combine date and time for formatting
   const getEventDateTime = (event) => {
@@ -217,93 +217,118 @@ export default function Scan({ auth, events }) {
     };
   };
 
-  // Status card renderer with progress bar and profile photo
-const renderStatusCard = () => {
-  if (!status) return null;
+  // Status card renderer with progress bar and status
+  const renderStatusCard = () => {
+    if (!status) return null;
 
-  const { type, data } = status;
-  let icon, bgColor, title;
+    const { type, data } = status;
+    let icon, bgColor, title;
 
-  if (type === 'success') {
-    icon = <CheckCircle className="h-8 w-8 text-white" />;
-    bgColor = 'bg-green-600';
-    title = 'Attendance Recorded!';
-  } else if (type === 'warning') {
-    icon = <AlertCircle className="h-8 w-8 text-white" />;
-    bgColor = 'bg-amber-500';
-    title = 'Already Checked In';
-  } else {
-    icon = <XCircle className="h-8 w-8 text-white" />;
-    bgColor = 'bg-red-600';
-    title = 'Error';
-  }
+    if (type === 'success') {
+      icon = <CheckCircle className="h-8 w-8 text-white" />;
+      bgColor = 'bg-green-600';
+      title = 'Attendance Recorded!';
+    } else if (type === 'warning') {
+      icon = <AlertCircle className="h-8 w-8 text-white" />;
+      bgColor = 'bg-amber-500';
+      title = 'Already Checked In';
+    } else {
+      icon = <XCircle className="h-8 w-8 text-white" />;
+      bgColor = 'bg-red-600';
+      title = 'Error';
+    }
 
-  const progressColor = type === 'success' ? 'bg-green-400' :
-                        type === 'warning' ? 'bg-amber-400' :
-                        'bg-red-400';
+    const progressColor =
+      type === 'success'
+        ? 'bg-green-400'
+        : type === 'warning'
+        ? 'bg-amber-400'
+        : 'bg-red-400';
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-in fade-in duration-300">
-      <div className={`mx-auto w-full max-w-md rounded-xl ${bgColor} p-5 text-center text-white shadow-lg animate-in slide-in-from-bottom-6 duration-300 relative overflow-hidden`}>
-        <div className="flex justify-center mb-2">
-          <div className="rounded-full bg-white/20 p-2.5">
-            {icon}
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-in fade-in duration-300">
+        <div
+          className={`mx-auto w-full max-w-sm rounded-xl ${bgColor} p-4 text-center text-white shadow-lg animate-in slide-in-from-bottom-6 duration-300 relative overflow-hidden`}
+        >
+          <div className="flex justify-center mb-1">
+            <div className="rounded-full bg-white/20 p-2">{icon}</div>
           </div>
-        </div>
-        <h3 className="text-xl font-bold">{title}</h3>
+          <h3 className="text-xl font-bold">{title}</h3>
 
-        {type === 'success' && (
-          <div className="mt-3 flex flex-col items-center space-y-2">
-            <img
-              src={data.profile_photo || defaultAvatar}
-              alt={data.employee_name}
-              className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-2 border-white object-cover shadow-md"
-              loading="lazy"
-              onError={(e) => { e.target.src = defaultAvatar; }}
+          {type === 'success' && (
+            <div className="mt-2 flex flex-col items-center space-y-1">
+              <img
+                src={data.profile_photo || defaultAvatar}
+                alt={data.employee_name}
+                className="h-12 w-12 rounded-full border-2 border-white object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = defaultAvatar;
+                }}
+              />
+              <p className="font-semibold">{data.employee_name}</p>
+              <p className="text-xs opacity-90">{data.department}</p>
+              <p className="text-xs opacity-90">
+                Time In: {formatTime(data.time_in)}
+              </p>
+              <p
+                className={`text-xs font-medium ${
+                  data.status === 'late' ? 'text-yellow-300' : 'text-white/90'
+                }`}
+              >
+                Status: {data.status === 'late' ? 'Late' : 'Present'}
+              </p>
+            </div>
+          )}
+
+          {type === 'warning' && (
+            <div className="mt-2 flex flex-col items-center space-y-1">
+              <img
+                src={data.profile_photo || defaultAvatar}
+                alt={data.employee_name}
+                className="h-12 w-12 rounded-full border-2 border-white object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = defaultAvatar;
+                }}
+              />
+              <p className="font-semibold">{data.employee_name}</p>
+              <p className="text-xs opacity-90">
+                Already checked in at {formatTime(data.time_in)}
+              </p>
+              <p className="text-xs opacity-90">Event: {data.event_title}</p>
+              <p
+                className={`text-xs font-medium ${
+                  data.status === 'late' ? 'text-yellow-300' : 'text-white/90'
+                }`}
+              >
+                Status: {data.status === 'late' ? 'Late' : 'Present'}
+              </p>
+            </div>
+          )}
+
+          {type === 'error' && (
+            <div className="mt-2 text-base">
+              <p>{data.message}</p>
+              <p className="text-xs opacity-80 mt-1">Please try again.</p>
+            </div>
+          )}
+
+          <div className="mt-2 text-xs opacity-75">
+            Scanner will resume automatically...
+          </div>
+
+          {/* Progress bar */}
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-white/20">
+            <div
+              className={`h-full transition-all duration-100 ease-linear ${progressColor}`}
+              style={{ width: `${progress}%` }}
             />
-            <p className="font-semibold text-lg">{data.employee_name}</p>
-            <p className="text-sm opacity-90">{data.department}</p>
-            <p className="text-sm opacity-90">Time In: {formatTime(data.time_in)}</p>
           </div>
-        )}
-
-        {type === 'warning' && (
-          <div className="mt-3 flex flex-col items-center space-y-2">
-            <img
-              src={data.profile_photo || defaultAvatar}
-              alt={data.employee_name}
-              className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-2 border-white object-cover shadow-md"
-              loading="lazy"
-              onError={(e) => { e.target.src = defaultAvatar; }}
-            />
-            <p className="font-semibold text-lg">{data.employee_name}</p>
-            <p className="text-sm opacity-90">Already checked in at {formatTime(data.time_in)}</p>
-            <p className="text-sm opacity-90">Event: {data.event_title}</p>
-          </div>
-        )}
-
-        {type === 'error' && (
-          <div className="mt-3 text-base">
-            <p>{data.message}</p>
-            <p className="text-sm opacity-80 mt-1">Please try again.</p>
-          </div>
-        )}
-
-        <div className="mt-3 text-xs opacity-75">
-          Scanner will resume automatically...
-        </div>
-
-        {/* Progress bar */}
-        <div className="absolute bottom-0 left-0 h-1 w-full bg-white/20">
-          <div
-            className={`h-full transition-all duration-100 ease-linear ${progressColor}`}
-            style={{ width: `${progress}%` }}
-          />
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
     <HRLayout user={auth.user}>
@@ -313,8 +338,12 @@ const renderStatusCard = () => {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-navy-800 sm:text-3xl">Scan Attendance</h1>
-            <p className="text-sm text-gray-500">Point camera at employee QR code</p>
+            <h1 className="text-2xl font-bold text-navy-800 sm:text-3xl">
+              Scan Attendance
+            </h1>
+            <p className="text-sm text-gray-500">
+              Point camera at employee QR code
+            </p>
           </div>
 
           {/* Event Selection Card */}
@@ -322,7 +351,11 @@ const renderStatusCard = () => {
             <div className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1">
-                  <InputLabel htmlFor="event" value="Select Event" className="text-sm font-medium text-gray-700" />
+                  <InputLabel
+                    htmlFor="event"
+                    value="Select Event"
+                    className="text-sm font-medium text-gray-700"
+                  />
                   <SelectInput
                     id="event"
                     value={selectedEventId}
@@ -343,9 +376,13 @@ const renderStatusCard = () => {
                 {selectedEvent && (
                   <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                     <Calendar className="h-4 w-4" />
-                    <span>{formatDate(`${selectedEvent.date}T${selectedEvent.time}`)}</span>
+                    <span>
+                      {formatDate(`${selectedEvent.date}T${selectedEvent.time}`)}
+                    </span>
                     <Clock className="h-4 w-4 ml-2" />
-                    <span>{formatTime(`${selectedEvent.date}T${selectedEvent.time}`)}</span>
+                    <span>
+                      {formatTime(`${selectedEvent.date}T${selectedEvent.time}`)}
+                    </span>
                     <MapPin className="h-4 w-4 ml-2" />
                     <span>{selectedEvent.venue}</span>
                   </div>
@@ -379,7 +416,9 @@ const renderStatusCard = () => {
               ) : (
                 <div className="aspect-square w-full max-w-md mx-auto flex flex-col items-center justify-center rounded-lg bg-gray-100 text-gray-400">
                   <Camera className="h-12 w-12" />
-                  <span className="mt-2 text-sm">Select an event to start</span>
+                  <span className="mt-2 text-sm">
+                    Select an event to start
+                  </span>
                 </div>
               )}
             </div>
@@ -394,13 +433,21 @@ const renderStatusCard = () => {
               >
                 <Wrench className="h-3 w-3" />
                 {showDevTools ? 'Hide' : 'Show'} Development Tools
-                {showDevTools ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {showDevTools ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
               </button>
               {showDevTools && (
                 <div className="mt-2 rounded-lg border-2 border-dashed border-yellow-300 bg-yellow-50 p-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-yellow-800">Manual Check‑In</span>
-                    <span className="text-xs text-yellow-600">(Development Only)</span>
+                    <span className="text-sm font-medium text-yellow-800">
+                      Manual Check‑In
+                    </span>
+                    <span className="text-xs text-yellow-600">
+                      (Development Only)
+                    </span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-end gap-2">
                     <div className="flex-1 min-w-[200px]">

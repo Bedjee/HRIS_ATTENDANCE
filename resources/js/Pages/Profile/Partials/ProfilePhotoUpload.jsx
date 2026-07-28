@@ -52,13 +52,13 @@ export default function ProfilePhotoUpload({ employee }) {
             <header>
                 <h2 className="text-lg font-medium text-gray-900">Profile Photo</h2>
                 <p className="mt-1 text-sm text-gray-600">
-                    Upload or take a photo to help HR identify you during attendance.
+                    Upload a clear photo (max 5MB, JPEG/PNG). This photo will be used for identity verification during attendance.
                 </p>
             </header>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
-                    {/* Photo preview – much larger */}
+                    {/* Photo preview */}
                     <div className="relative shrink-0">
                         <img
                             src={preview || '/default-avatar.png'}
@@ -76,7 +76,7 @@ export default function ProfilePhotoUpload({ employee }) {
                         )}
                     </div>
 
-                    {/* Upload / Capture buttons – hidden when a file is selected */}
+                    {/* Upload / Capture buttons */}
                     {!selectedFile && (
                         <div className="flex w-full flex-col gap-2 sm:w-auto">
                             <label
@@ -114,7 +114,7 @@ export default function ProfilePhotoUpload({ employee }) {
                     )}
                 </div>
 
-                {/* Save / Cancel buttons – only show when a file is selected */}
+                {/* Save / Cancel buttons */}
                 {selectedFile && (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <button

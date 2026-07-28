@@ -29,6 +29,7 @@ class StoreEventRequest extends FormRequest
         'selected_departments.*' => ['exists:departments,id'],
         'employee_ids' => ['nullable', 'array'],
         'employee_ids.*' => ['exists:employees,id'],
+        'grace_period' => ['nullable', 'integer', 'min:0'],
     ];
 }
 
