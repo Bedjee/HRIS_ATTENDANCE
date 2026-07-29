@@ -4,6 +4,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import LogoutButton from '@/Components/LogoutButton';
 import ThemeSwitcher from '@/Components/ThemeSwitcher';
+import HelpAssistant from '@/Components/HelpAssistant'; // ✅ import
 import {
   Menu,
   X,
@@ -212,6 +213,7 @@ export default function EmployeeLayout({ children, user }) {
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
+       <HelpAssistant />
     </div>
   );
 }

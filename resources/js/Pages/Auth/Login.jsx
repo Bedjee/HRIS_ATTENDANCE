@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import HelpAssistant from '@/Components/HelpAssistant'; // ✅ import
 import { LogIn, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
@@ -217,6 +218,7 @@ export default function Login({ status, canResetPassword }) {
                         </div>
                     </div>
                 </div>
+                 <HelpAssistant />
             </div>
         </>
     );
