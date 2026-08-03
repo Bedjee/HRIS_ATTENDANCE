@@ -5,7 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import SelectInput from '@/Components/SelectInput';
 import { toast } from 'react-hot-toast';
-import { QrCode, Plus, Download, User, X } from 'lucide-react';
+import { QrCode, Plus, Download, User, X,Eye  } from 'lucide-react';
 
 const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23e2e8f0'/%3E%3Ctext x='50' y='55' text-anchor='middle' font-size='40' font-family='sans-serif' fill='%2394a3b8'%3E%3C/text%3E%3C/svg%3E";
 
@@ -225,27 +225,37 @@ export default function Index({ auth, employees, clusters, departments, filters 
                         <td className="px-3 py-3 text-sm text-gray-500 sm:px-4 sm:py-4">
                           {employee.user.username}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium sm:px-4 sm:py-4">
-                          <button
-                            onClick={() => handleResetPassword(employee.id, employee.full_name)}
-                            disabled={resettingId === employee.id}
-                            className="mr-1 inline-flex items-center rounded-md p-1 text-navy-600 hover:bg-navy-50 hover:text-navy-900 disabled:opacity-50 sm:mr-2 sm:p-1.5"
-                            title="Reset Password"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                            </svg>
-                            <span className="sr-only">Reset Password</span>
-                          </button>
-                          <Link
-                            href={route('hr.employees.qr', employee.id)}
-                            className="inline-flex items-center rounded-md p-1 text-green-600 hover:bg-green-50 hover:text-green-900 sm:p-1.5"
-                            title="View QR Code"
-                          >
-                            <QrCode className="h-4 w-4" />
-                            <span className="sr-only">View QR</span>
-                          </Link>
-                        </td>
+                       <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium sm:px-4 sm:py-4">
+  <Link
+    href={route('hr.employees.show', employee.id)}
+    className="inline-flex items-center rounded-md p-1 text-navy-600 hover:bg-navy-50 hover:text-navy-900 sm:p-1.5"
+    title="View Profile"
+  >
+    <Eye className="h-4 w-4" />
+    <span className="sr-only">View</span>
+  </Link>
+
+  <button
+    onClick={() => handleResetPassword(employee.id, employee.full_name)}
+    disabled={resettingId === employee.id}
+    className="mr-1 inline-flex items-center rounded-md p-1 text-navy-600 hover:bg-navy-50 hover:text-navy-900 disabled:opacity-50 sm:mr-2 sm:p-1.5"
+    title="Reset Password"
+  >
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+    </svg>
+    <span className="sr-only">Reset Password</span>
+  </button>
+
+  <Link
+    href={route('hr.employees.qr', employee.id)}
+    className="inline-flex items-center rounded-md p-1 text-green-600 hover:bg-green-50 hover:text-green-900 sm:p-1.5"
+    title="View QR Code"
+  >
+    <QrCode className="h-4 w-4" />
+    <span className="sr-only">View QR</span>
+  </Link>
+</td>
                       </tr>
                     ))}
                   </tbody>

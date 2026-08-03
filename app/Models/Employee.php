@@ -16,6 +16,7 @@ class Employee extends Model
     'middle_initial',
     'department_id', // replace 'department'
     'qr_token',
+    'profile_photo',
 ];
 
     protected $appends = ['full_name', 'formatted_name', 'profile_photo_url'];

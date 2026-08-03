@@ -128,8 +128,16 @@ Route::get('/employees/{employee}/qr', [EmployeeController::class, 'showQr'])
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('hr.employees.create');
 Route::post('/employees', [EmployeeController::class, 'store'])->name('hr.employees.store');
 
+
 Route::get('/employees/export-credentials', [EmployeeController::class, 'exportCredentials'])
     ->name('hr.employees.export-credentials');
+
+
+    Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('hr.employees.show');
+Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('hr.employees.edit');
+Route::patch('/employees/{employee}', [EmployeeController::class, 'update'])->name('hr.employees.update');
+
+
 
     // Events
     Route::get('/events', [EventController::class, 'index'])->name('hr.events.index');
@@ -138,6 +146,8 @@ Route::get('/employees/export-credentials', [EmployeeController::class, 'exportC
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('hr.events.edit');
     Route::patch('/events/{event}', [EventController::class, 'update'])->name('hr.events.update');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('hr.events.destroy');
+    Route::patch('/events/{event}/status', [EventController::class, 'updateStatus'])
+    ->name('hr.events.update-status');
 
     Route::get('/events/{event}/attendance', [EventController::class, 'attendance'])->name('hr.events.attendance');
     Route::get('/events/{event}/required', [EventController::class, 'required'])->name('hr.events.required');
@@ -145,6 +155,8 @@ Route::get('/employees/export-credentials', [EmployeeController::class, 'exportC
     // Attendance Scanning
     Route::get('/attendance/scan', [AttendanceController::class, 'scan'])->name('hr.attendance.scan');
     Route::post('/attendance/scan/process', [AttendanceController::class, 'processScan'])->name('hr.attendance.scan.process');
+    Route::patch('/attendance/{attendance}/status', [AttendanceController::class, 'updateStatus'])
+    ->name('hr.attendance.update-status');
 
 
     // Reports

@@ -5,9 +5,12 @@ use App\Exports\EmployeesExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Http\Requests\UpdateEmployeeRequest; // we'll create this
 use App\Models\User;
 use App\Models\Cluster;
 use App\Models\Department;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Services\EmployeeImportService;
@@ -122,5 +125,69 @@ public function exportCredentials()
     return Excel::download(new EmployeesExport, 'employee_credentials.xlsx');
 }
 
+
+
+
+public function show(Employee $employee)
+{
+    $employee->load(['user', 'department.cluster']);
+
+    return Inertia::render('HR/Employees/Show', [
+        'employee' => $employee,
+        'clusters' => Cluster::select('id', 'name')->get(),
+        'departments' => Department::select('id', 'name', 'cluster_id')->get(),
+    ]);
+}
+
+/**
+ * Show the edit form for an employee.
+ */
+public function edit(Employee $employee)
+{
+    $employee->load(['user', 'department.cluster']);
+    return Inertia::render('HR/Employees/Edit', [
+        'employee' => $employee,
+        'clusters' => Cluster::select('id', 'name')->get(),
+        'departments' => Department::select('id', 'name', 'cluster_id')->get(),
+    ]);
+}
+
+/**
+ * Update the specified employee.
+ */
+public function update(UpdateEmployeeRequest $request, Employee $employee)
+{
+    $data = $request->validated();
+
+    // Update employee fields
+    $employee->update([
+        'first_name' => $data['first_name'],
+        'last_name' => $data['last_name'],
+        'middle_initial' => $data['middle_initial'] ?? null,
+        'department_id' => $data['department_id'],
+    ]);
+
+    // Update user account fields – map is_active to status
+    $userData = [];
+    if (isset($data['username'])) {
+        $userData['username'] = $data['username'];
+    }
+    if (isset($data['is_active'])) {
+        $userData['status'] = $data['is_active'] ? 'active' : 'inactive';
+    }
+    if (!empty($userData)) {
+        $employee->user->update($userData);
+    }
+
+    // Handle photo upload
+    if ($request->hasFile('profile_photo')) {
+        $path = $request->file('profile_photo')->store('profile_photos', 'public');
+        $employee->profile_photo = $path;
+        $employee->save();
+    }
+
+    return redirect()->route('hr.employees.show', $employee)
+        ->with('success', 'Employee updated successfully.');
+}
 
 }

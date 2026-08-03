@@ -4,11 +4,13 @@ namespace App\Http\Controllers\HR;
 use App\Models\Attendance;
 use App\Models\Cluster;
 use App\Models\Department;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEventRequest;
 use App\Services\EventService;
-
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 use App\Models\Employee;
 use App\Models\Event;
 use Illuminate\Http\Request;
@@ -76,35 +78,60 @@ class EventController extends Controller
     }
 
     public function update(StoreEventRequest $request, $id)
-    {
-        try {
-            $data = $request->validated();
-            $data['selected_clusters'] = $request->input('selected_clusters', []);
-            $data['selected_departments'] = $request->input('selected_departments', []);
-            $data['employee_ids'] = $request->input('employee_ids', []);
-            $this->eventService->updateEvent($id, $data);
-            return redirect()->route('hr.events.index')
-                ->with('success', 'Event updated successfully.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to update event: ' . $e->getMessage());
-        }
+{
+    try {
+        $data = $request->validated();
+        $data['selected_clusters'] = $request->input('selected_clusters', []);
+        $data['selected_departments'] = $request->input('selected_departments', []);
+        $data['employee_ids'] = $request->input('employee_ids', []);
+
+        $event = $this->eventService->updateEvent($id, $data);
+
+        // Clear the cached event metadata
+        Cache::forget("event_{$event->id}_meta");
+
+        return redirect()->route('hr.events.index')
+            ->with('success', 'Event updated successfully.');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Failed to update event: ' . $e->getMessage());
     }
+}
 
-    public function destroy($id)
-    {
-        try {
-            $this->eventService->deleteEvent($id);
-            return redirect()->route('hr.events.index')
-                ->with('success', 'Event deleted successfully.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to delete event: ' . $e->getMessage());
-        }
+
+
+// app/Http/Controllers/HR/EventController.php
+
+public function destroy($id)
+{
+    Log::info('Destroy controller called for event: ' . $id);
+
+    try {
+        $this->eventService->deleteEvent($id);
+        return redirect()->route('hr.events.index')
+            ->with('success', 'Event deleted successfully.');
+    } catch (\Exception $e) {
+        Log::error('Delete failed: ' . $e->getMessage());
+        return back()->with('error', $e->getMessage());
     }
+}
 
 
 
+public function updateStatus(Request $request, Event $event)
+{
+    $request->validate([
+        'status' => ['required', Rule::in(['upcoming', 'ongoing', 'completed'])],
+    ]);
 
+    $event->status = $request->status;
+    $event->save();
 
+    // Clear the cached event metadata
+    Cache::forget("event_{$event->id}_meta");
+
+    return redirect()->route('hr.events.index')
+        ->with('success', 'Status updated successfully.');
+}
 
 
 
@@ -177,12 +204,14 @@ public function required(Event $event)
 /**
      * Attendance Details page – final outcome (Present / Absent) with manual attendance support.
      */
-    public function attendance(Event $event)
+ public function attendance(Event $event)
 {
+    // Get all employees required for this event
     $requiredEmployees = $event->requiredEmployees()
         ->with(['department.cluster', 'user'])
         ->get();
 
+    // Map employee_id => time_in from already recorded attendance
     $presentRecords = Attendance::where('event_id', $event->id)
         ->pluck('time_in', 'employee_id');
 
@@ -195,35 +224,37 @@ public function required(Event $event)
 
     foreach ($requiredEmployees as $emp) {
         $attTime = $presentRecords->get($emp->id);
+
         if ($attTime) {
+            // ✅ Fetch the actual attendance record to get its ID
             $attendance = Attendance::where('employee_id', $emp->id)
                 ->where('event_id', $event->id)
                 ->first();
-            if ($attendance->status === 'late') {
-                $late->push([
-                    'id' => $emp->id,
-                    'employee_name' => $emp->full_name,
-                    'department' => $emp->department?->name ?? 'Unassigned',
-                    'cluster' => $emp->department?->cluster?->name ?? '—',
-                    'time_in' => $attTime,
-                    'status' => $attendance->status,
-                ]);
-            } else {
-                $present->push([
-                    'id' => $emp->id,
-                    'employee_name' => $emp->full_name,
-                    'department' => $emp->department?->name ?? 'Unassigned',
-                    'cluster' => $emp->department?->cluster?->name ?? '—',
-                    'time_in' => $attTime,
-                    'status' => $attendance->status,
-                ]);
-            }
-        } elseif ($isPast) {
-            $absent->push([
-                'id' => $emp->id,
+
+            // Build data with the attendance record ID (not employee ID)
+            $attData = [
+                'id' => $attendance->id,               // ← this is the ATTENDANCE ID
                 'employee_name' => $emp->full_name,
                 'department' => $emp->department?->name ?? 'Unassigned',
                 'cluster' => $emp->department?->cluster?->name ?? '—',
+                'time_in' => $attTime,
+                'status' => $attendance->status,
+            ];
+
+            if ($attendance->status === 'late') {
+                $late->push($attData);
+            } else {
+                $present->push($attData);
+            }
+        } elseif ($isPast) {
+            // No attendance record yet – store employee ID as fallback (edit not possible)
+            $absent->push([
+                'id' => null,                          // no attendance ID
+                'employee_id' => $emp->id,            // keep employee ID for reference
+                'employee_name' => $emp->full_name,
+                'department' => $emp->department?->name ?? 'Unassigned',
+                'cluster' => $emp->department?->cluster?->name ?? '—',
+                 'status' => 'absent',  // ✅ ensures 'Absent' is displayed
             ]);
         }
     }

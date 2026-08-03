@@ -4,7 +4,10 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Services\AttendanceService;
-
+use App\Models\Attendance;
+use App\Models\AttendanceStatusChange;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use App\Models\Event;
 use Illuminate\Http\Request;
@@ -73,7 +76,7 @@ public function manualStore(Request $request, Event $event)
     $request->validate([
         'employee_id' => ['required', 'integer', 'exists:employees,id'],
         'remarks' => ['required', 'string', 'max:500'],
-        'time_in' => ['nullable', 'date_format:Y-m-d H:i:s'],
+        'time_in' => ['nullable', 'date_format:Y-m-d\TH:i'], // ✅ changed to match datetime-local format
     ]);
 
     $result = $this->attendanceService->manualAttendance(
@@ -87,6 +90,64 @@ public function manualStore(Request $request, Event $event)
     Log::info('Manual attendance result', $result);
 
     return response()->json($result);
+}
+
+
+public function updateStatus(Request $request, Attendance $attendance)
+{
+    Log::info('Status update request', [
+        'attendance_id' => $attendance->id,
+        'payload' => $request->all(),
+    ]);
+
+    try {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['present', 'late', 'absent'])],
+            'reason' => ['required', 'string', 'min:3', 'max:500'],
+        ]);
+
+        $oldStatus = $attendance->status;
+        $newStatus = $validated['status'];
+
+        if ($oldStatus === $newStatus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status is already set to ' . $newStatus . '.',
+            ], 422);
+        }
+
+        $attendance->status = $newStatus;
+        $attendance->save();
+
+        AttendanceStatusChange::create([
+            'attendance_id' => $attendance->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'changed_by' => $request->user()->id,
+            'reason' => $validated['reason'],
+        ]);
+
+        Cache::forget("event_{$attendance->event_id}_meta");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance status updated successfully.',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed.',
+            'errors' => $e->errors(),
+        ], 422);
+    } catch (\Exception $e) {
+        Log::error('Status update error: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Server error: ' . $e->getMessage(),
+        ], 500);
+    }
 }
 
 

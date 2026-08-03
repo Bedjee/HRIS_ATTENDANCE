@@ -62,14 +62,38 @@ class EventService
     public function createEvent(array $data)
 {
     return DB::transaction(function () use ($data) {
-        Log::info('Creating event with data:', $data);
-        $event = Event::create($data);
-        $employeeIds = $this->computeEmployeeIds($data);
-        $event->requiredEmployees()->sync($employeeIds);
-        Log::info('Event created with ' . count($employeeIds) . ' required employees');
+        Log::info('1. Creating event with data:', $data);
+
+        try {
+            $event = Event::create($data);
+            Log::info('2. Event created with ID: ' . ($event->id ?? 'null'));
+        } catch (\Exception $e) {
+            Log::error('3. Event::create failed: ' . $e->getMessage());
+            throw $e;
+        }
+
+        try {
+            $employeeIds = $this->computeEmployeeIds($data);
+            Log::info('4. Computed employee IDs:', ['ids' => $employeeIds]);
+        } catch (\Exception $e) {
+            Log::error('5. computeEmployeeIds failed: ' . $e->getMessage());
+            throw $e;
+        }
+
+        try {
+            $event->requiredEmployees()->sync($employeeIds);
+            Log::info('6. Sync completed successfully.');
+        } catch (\Exception $e) {
+            Log::error('7. Sync failed: ' . $e->getMessage());
+            throw $e;
+        }
+
+        Log::info('8. Event created with ' . count($employeeIds) . ' required employees');
         return $event;
     });
 }
+
+
     public function updateEvent($id, array $data)
     {
         return DB::transaction(function () use ($id, $data) {
@@ -81,16 +105,29 @@ class EventService
         });
     }
 
-    public function deleteEvent($id)
-    {
-        return DB::transaction(function () use ($id) {
-            $event = Event::findOrFail($id);
-            if ($event->attendances()->exists()) {
-                throw new \Exception('Cannot delete an event that already has attendance records.');
-            }
-            $event->requiredEmployees()->detach();
-            $event->delete();
-            return true;
-        });
-    }
+// app/Services/EventService.php
+
+// app/Services/EventService.php
+
+public function deleteEvent($id)
+{
+    return DB::transaction(function () use ($id) {
+        $event = Event::findOrFail($id);
+
+        Log::info('Deleting event with attendance records: ' . $event->attendances()->count());
+
+        // Delete all attendance records (cascading foreign key will also handle)
+        $event->attendances()->delete();
+
+        // Detach required employees (pivot table)
+        $event->requiredEmployees()->detach();
+
+        // Delete the event
+        $event->delete();
+
+        Log::info('Event deleted successfully: ' . $id);
+        return true;
+    });
+}
+
 }

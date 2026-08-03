@@ -21,7 +21,7 @@ export default function Create({ auth, clusters, departments, employees }) {
         selected_clusters: [],
         selected_departments: [],
         employee_ids: [],
-        grace_period: '',
+         grace_period: null,
     });
 
     const submit = (e) => {
@@ -147,12 +147,12 @@ export default function Create({ auth, clusters, departments, employees }) {
                                     <InputLabel htmlFor="grace_period" value="Grace Period (minutes)" />
                                     <div className="relative mt-1">
                                         <Clock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                                        <TextInput
-                                            id="grace_period"
-                                            type="number"
-                                            min="0"
-                                            value={data.grace_period}
-                                            onChange={(e) => setData('grace_period', e.target.value)}
+                                       <TextInput
+    id="grace_period"
+    type="number"
+    min="0"
+    value={data.grace_period ?? ''}
+    onChange={(e) => setData('grace_period', e.target.value === '' ? null : parseInt(e.target.value))}
                                             className="block w-full rounded-lg border-gray-300 pl-9 shadow-sm focus:border-navy-500 focus:ring-navy-500"
                                             placeholder="e.g., 15"
                                         />

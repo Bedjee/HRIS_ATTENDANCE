@@ -7,7 +7,8 @@ import { formatDate, formatTime } from '@/utils/date';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
-import { FileText } from 'lucide-react'; // <-- add this import
+import { FileText } from 'lucide-react';
+import SummaryPDFModal from '@/Components/SummaryPDFModal';
 
 export default function EventAttendance({ auth, events, clusters, departments }) {
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -16,6 +17,7 @@ export default function EventAttendance({ auth, events, clusters, departments })
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   // Filter departments based on selected cluster
   const filteredDepartments = departments.filter(
@@ -96,14 +98,13 @@ export default function EventAttendance({ auth, events, clusters, departments })
               {/* Header with button */}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="text-2xl font-bold text-navy-800">Attendance Reports</h2>
-                {/* ✅ New Export Summary PDF button */}
                 <button
-    onClick={() => window.location.href = route('hr.reports.attendance-summary-pdf')}
-    className="inline-flex items-center rounded-md bg-navy-700 px-4 py-2 text-sm text-white hover:bg-navy-800 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:ring-offset-2"
->
-    <FileText className="mr-2 h-4 w-4" />
-    Export Summary PDF
-</button>
+                  onClick={() => setShowSummaryModal(true)}
+                  className="inline-flex items-center rounded-md bg-navy-700 px-4 py-2 text-sm text-white hover:bg-navy-800 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:ring-offset-2"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export Summary PDF
+                </button>
               </div>
 
               {/* Filters */}
@@ -265,6 +266,15 @@ export default function EventAttendance({ auth, events, clusters, departments })
           </div>
         </div>
       </div>
+
+      {/* Summary PDF Modal */}
+      <SummaryPDFModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        events={events}
+        clusters={clusters}
+        departments={departments}
+      />
     </HRLayout>
   );
 }

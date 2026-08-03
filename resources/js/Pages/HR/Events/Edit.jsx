@@ -20,7 +20,7 @@ export default function Edit({ auth, event, clusters, departments, employees, se
         selected_clusters: event.selected_clusters || [],
         selected_departments: event.selected_departments || [],
         employee_ids: selectedEmployeeIds || [],
-        grace_period: event.grace_period || '',
+        grace_period: event.grace_period ?? null,
     });
 
     const submit = (e) => {

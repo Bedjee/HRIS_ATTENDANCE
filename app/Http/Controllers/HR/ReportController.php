@@ -79,9 +79,16 @@ class ReportController extends Controller
 
 
 
-public function attendanceSummaryPdf(AttendanceSummaryReportService $service)
+public function attendanceSummaryPdf(Request $request, AttendanceSummaryReportService $service)
 {
-    return $service->generatePdf(); // This now returns a Response object with headers
+    $filters = $request->only(['event_ids', 'cluster_id', 'department_id', 'date_from', 'date_to']);
+
+    // Convert comma-separated event_ids to array
+    if (isset($filters['event_ids']) && is_string($filters['event_ids'])) {
+        $filters['event_ids'] = array_filter(explode(',', $filters['event_ids']));
+    }
+
+    return $service->generatePdf($filters);
 }
 
 }

@@ -5,15 +5,21 @@ import { toast } from 'react-hot-toast';
 import { formatDate, formatTime } from '@/utils/date';
 import {
   Plus, Pencil, Trash2, Calendar, Clock, MapPin, Circle,
-  Users, Layers, GitBranch, User, Eye, UserCheck
+  Users, Layers, GitBranch, User, Eye, UserCheck,
 } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Tooltip from '@/Components/Tooltip';
+import FloatingActionsMenu from '@/Components/FloatingActionsMenu'; // <-- new component
 
 export default function Index({ auth, events }) {
   const [deletingId, setDeletingId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
+
+  // Status change modal state
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
 
   // Helper to get a human-readable label for attendance mode
   const getAttendanceModeLabel = (event) => {
@@ -42,28 +48,24 @@ export default function Index({ auth, events }) {
   };
 
   const confirmDelete = () => {
-  if (!eventToDelete) return;
-  const id = eventToDelete.id;
-  const title = eventToDelete.title;
-  setDeletingId(id);
-  router.delete(route('hr.events.destroy', id), {
-    onSuccess: () => {
-      toast.success('Event deleted successfully.');
-      setModalOpen(false); // ✅ Close the modal
-      setDeletingId(null);
-      setEventToDelete(null);
-    },
-    onError: (error) => {
-      const msg = error.response?.data?.message || 'Failed to delete event.';
-      toast.error(msg);
-      setModalOpen(false); // ✅ Close the modal
-      setDeletingId(null);
-      setEventToDelete(null);
-    },
-  });
-};
-
-
+    if (!eventToDelete) return;
+    const id = eventToDelete.id;
+    const title = eventToDelete.title;
+    setDeletingId(id);
+    router.delete(route('hr.events.destroy', id), {
+      onSuccess: () => {
+        toast.success('Event deleted successfully.');
+        setDeletingId(null);
+        setEventToDelete(null);
+      },
+      onError: (error) => {
+        const msg = error.response?.data?.message || 'Failed to delete event.';
+        toast.error(msg);
+        setDeletingId(null);
+        setEventToDelete(null);
+      },
+    });
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -73,6 +75,37 @@ export default function Index({ auth, events }) {
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
+
+  // Open status change modal
+  const openStatusModal = (event) => {
+    setSelectedEvent(event);
+    setNewStatus(event.status);
+    setStatusModalOpen(true);
+  };
+
+  // Submit status change
+  const updateStatus = () => {
+  if (!selectedEvent || !newStatus) {
+    toast.error('Missing event or status.');
+    return;
+  }
+
+  router.patch(
+    route('hr.events.update-status', { event: selectedEvent.id }),
+    { status: newStatus },
+    {
+      onSuccess: () => {
+        toast.success('Status updated successfully.');
+        setStatusModalOpen(false);
+        setSelectedEvent(null);
+        router.reload();
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to update status.');
+      },
+    }
+  );
+};
 
   return (
     <HRLayout user={auth.user}>
@@ -138,8 +171,8 @@ export default function Index({ auth, events }) {
                           <ModeIcon className={`h-4 w-4 ${mode.color}`} />
                           <span className={mode.color}>{mode.label}</span>
                         </div>
-                        <div className="flex gap-1">
-                          {/* Required Attendees */}
+                        <div className="flex items-center gap-1">
+                          {/* Primary actions: Required & Attendance */}
                           <Tooltip text="Required Attendees">
                             <Link
                               href={route('hr.events.required', event.id)}
@@ -149,7 +182,6 @@ export default function Index({ auth, events }) {
                               <span className="sr-only">Required</span>
                             </Link>
                           </Tooltip>
-                          {/* View Attendance */}
                           <Tooltip text="View Attendance">
                             <Link
                               href={route('hr.events.attendance', event.id)}
@@ -159,27 +191,15 @@ export default function Index({ auth, events }) {
                               <span className="sr-only">Attendance</span>
                             </Link>
                           </Tooltip>
-                          {/* Edit */}
-                          <Tooltip text="Edit Event">
-                            <Link
-                              href={route('hr.events.edit', event.id)}
-                              className="rounded-md p-1.5 text-navy-600 hover:bg-navy-50 hover:text-navy-900"
-                            >
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Link>
-                          </Tooltip>
-                          {/* Delete */}
-                          <Tooltip text="Delete Event">
-                            <button
-                              onClick={() => handleDeleteClick(event)}
-                              disabled={deletingId === event.id}
-                              className="rounded-md p-1.5 text-red-600 hover:bg-red-50 hover:text-red-900 disabled:opacity-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </button>
-                          </Tooltip>
+
+                          {/* Floating Actions Menu (replaces the old inline Menu) */}
+                          <FloatingActionsMenu
+                            event={event}
+                            onEdit={(e) => router.visit(route('hr.events.edit', e.id))}
+                            onDelete={handleDeleteClick}
+                            onStatusChange={openStatusModal}
+                            isDeleting={deletingId === event.id}
+                          />
                         </div>
                       </div>
                     </div>
@@ -261,47 +281,36 @@ export default function Index({ auth, events }) {
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium sm:px-6">
-                            {/* Required Attendees */}
-                            <Tooltip text="Required Attendees">
-                              <Link
-                                href={route('hr.events.required', event.id)}
-                                className="inline-flex items-center rounded-md p-1.5 text-blue-600 hover:bg-blue-50 hover:text-blue-900"
-                              >
-                                <Users className="h-4 w-4" />
-                                <span className="sr-only">Required</span>
-                              </Link>
-                            </Tooltip>
-                            {/* View Attendance */}
-                            <Tooltip text="View Attendance">
-                              <Link
-                                href={route('hr.events.attendance', event.id)}
-                                className="inline-flex items-center rounded-md p-1.5 text-green-600 hover:bg-green-50 hover:text-green-900"
-                              >
-                                <UserCheck className="h-4 w-4" />
-                                <span className="sr-only">Attendance</span>
-                              </Link>
-                            </Tooltip>
-                            {/* Edit */}
-                            <Tooltip text="Edit Event">
-                              <Link
-                                href={route('hr.events.edit', event.id)}
-                                className="inline-flex items-center rounded-md p-1.5 text-navy-600 hover:bg-navy-50 hover:text-navy-900"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Edit</span>
-                              </Link>
-                            </Tooltip>
-                            {/* Delete */}
-                            <Tooltip text="Delete Event">
-                              <button
-                                onClick={() => handleDeleteClick(event)}
-                                disabled={deletingId === event.id}
-                                className="ml-2 inline-flex items-center rounded-md p-1.5 text-red-600 hover:bg-red-50 hover:text-red-900 disabled:opacity-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </button>
-                            </Tooltip>
+                            <div className="flex items-center justify-end gap-1">
+                              {/* Primary actions: Required & Attendance */}
+                              <Tooltip text="Required Attendees">
+                                <Link
+                                  href={route('hr.events.required', event.id)}
+                                  className="inline-flex items-center rounded-md p-1.5 text-blue-600 hover:bg-blue-50 hover:text-blue-900"
+                                >
+                                  <Users className="h-4 w-4" />
+                                  <span className="sr-only">Required</span>
+                                </Link>
+                              </Tooltip>
+                              <Tooltip text="View Attendance">
+                                <Link
+                                  href={route('hr.events.attendance', event.id)}
+                                  className="inline-flex items-center rounded-md p-1.5 text-green-600 hover:bg-green-50 hover:text-green-900"
+                                >
+                                  <UserCheck className="h-4 w-4" />
+                                  <span className="sr-only">Attendance</span>
+                                </Link>
+                              </Tooltip>
+
+                              {/* Floating Actions Menu (replaces the old inline Menu) */}
+                              <FloatingActionsMenu
+                                event={event}
+                                onEdit={(e) => router.visit(route('hr.events.edit', e.id))}
+                                onDelete={handleDeleteClick}
+                                onStatusChange={openStatusModal}
+                                isDeleting={deletingId === event.id}
+                              />
+                            </div>
                           </td>
                         </tr>
                       );
@@ -335,6 +344,7 @@ export default function Index({ auth, events }) {
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -345,6 +355,44 @@ export default function Index({ auth, events }) {
         cancelText="Cancel"
         type="danger"
       />
+
+      {/* Status Change Modal */}
+      {statusModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+      <h3 className="text-lg font-semibold text-navy-800">Change Status</h3>
+      <p className="mt-1 text-sm text-gray-500">
+        Update the status for "{selectedEvent?.title}".
+      </p>
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700">Status</label>
+        <select
+          value={newStatus}
+          onChange={(e) => setNewStatus(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+        >
+          <option value="upcoming">Upcoming</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div className="mt-6 flex justify-end gap-2">
+        <button
+          onClick={() => setStatusModalOpen(false)}
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={updateStatus}
+          className="rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800"
+        >
+          Save Status
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </HRLayout>
   );
 }

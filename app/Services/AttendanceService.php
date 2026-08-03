@@ -29,6 +29,26 @@ class AttendanceService
                 return ['success' => false, 'message' => 'Event not found', 'data' => null];
             }
 
+            // ---- ENFORCE EVENT STATUS AND START TIME ----
+            if ($eventData['status'] !== 'ongoing') {
+                return [
+                    'success' => false,
+                    'message' => 'There is no active or ongoing event available for attendance scanning.',
+                    'data' => null
+                ];
+            }
+
+            $startDateTime = Carbon::parse($eventData['date'] . ' ' . $eventData['time']);
+            if (now()->lt($startDateTime)) {
+                return [
+                    'success' => false,
+                    'message' => 'There is no active or ongoing event available for attendance scanning.',
+                    'data' => null
+                ];
+            }
+            // ---- END VALIDATION ----
+
+            // Check if employee is required for this event (if not "all_employees")
             if ($eventData['attendance_mode'] !== 'all_employees') {
                 $requiredIds = $this->getRequiredEmployeeIds($eventId);
                 if (!in_array($employee->id, $requiredIds)) {
@@ -44,8 +64,9 @@ class AttendanceService
                 }
             }
 
+            // Attempt to create attendance record
             try {
-                // ✅ Compute attendance status only if grace_period > 0
+                // Compute attendance status based on grace period
                 $gracePeriod = $eventData['grace_period'] ?? 0;
                 if ($gracePeriod > 0) {
                     $deadline = Carbon::parse($eventData['time'])->addMinutes($gracePeriod);
@@ -76,6 +97,7 @@ class AttendanceService
                     ],
                 ];
             } catch (UniqueConstraintViolationException $e) {
+                // Already checked in – fetch existing record
                 $existing = Attendance::where('employee_id', $employee->id)
                     ->where('event_id', $eventId)
                     ->first();
@@ -105,24 +127,26 @@ class AttendanceService
     /**
      * Get event data as array (cached for 10 minutes).
      */
-    private function getEventData(int $eventId): ?array
-    {
-        return Cache::remember("event_{$eventId}_meta", 600, function () use ($eventId) {
-            $event = Event::find($eventId);
-            if (!$event) {
-                return null;
-            }
-            return [
-                'id' => $event->id,
-                'title' => $event->title,
-                'attendance_mode' => $event->attendance_mode,
-                'selected_clusters' => $event->selected_clusters,
-                'selected_departments' => $event->selected_departments,
-                'time' => $event->time,
-                'grace_period' => $event->grace_period,
-            ];
-        });
-    }
+  private function getEventData(int $eventId): ?array
+{
+    return Cache::remember("event_{$eventId}_meta", 600, function () use ($eventId) {
+        $event = Event::find($eventId);
+        if (!$event) {
+            return null;
+        }
+        return [
+            'id' => $event->id,
+            'title' => $event->title,
+            'attendance_mode' => $event->attendance_mode,
+            'selected_clusters' => $event->selected_clusters,
+            'selected_departments' => $event->selected_departments,
+            'time' => $event->time,
+            'date' => $event->date,          // ✅ added
+            'grace_period' => $event->grace_period,
+            'status' => $event->status,      // ✅ added
+        ];
+    });
+}
 
 
     /**
@@ -145,79 +169,115 @@ class AttendanceService
      * Record manual attendance.
      */
      public function manualAttendance(int $employeeId, int $eventId, int $userId, string $remarks, ?string $timeIn = null): array
-    {
-        try {
-            $employee = Employee::find($employeeId);
-            if (!$employee) {
-                return ['success' => false, 'message' => 'Employee not found.', 'data' => null];
-            }
+{
+    Log::info('manualAttendance START', [
+        'employee_id' => $employeeId,
+        'event_id' => $eventId,
+        'user_id' => $userId,
+        'remarks' => $remarks,
+        'timeIn' => $timeIn,
+    ]);
 
-            $event = Event::with('requiredEmployees')->find($eventId);
-            if (!$event) {
-                return ['success' => false, 'message' => 'Event not found.', 'data' => null];
-            }
+    try {
+        Log::info('Fetching employee...');
+        $employee = Employee::find($employeeId);
+        if (!$employee) {
+            Log::warning('Employee not found', ['employee_id' => $employeeId]);
+            return ['success' => false, 'message' => 'Employee not found.', 'data' => null];
+        }
 
-            if ($event->attendance_mode !== 'all_employees') {
-                $isRequired = $event->requiredEmployees()->where('employee_id', $employeeId)->exists();
-                if (!$isRequired) {
-                    return ['success' => false, 'message' => 'This employee is not assigned to this event.', 'data' => null];
-                }
-            }
+        Log::info('Fetching event...');
+        $event = Event::with('requiredEmployees')->find($eventId);
+        if (!$event) {
+            Log::warning('Event not found', ['event_id' => $eventId]);
+            return ['success' => false, 'message' => 'Event not found.', 'data' => null];
+        }
 
-            $existing = Attendance::where('employee_id', $employeeId)
-                ->where('event_id', $eventId)
-                ->first();
-            if ($existing) {
-                return [
-                    'success' => false,
-                    'message' => 'Already Checked In',
-                    'data' => [
-                        'employee_name' => $employee->full_name,
-                        'department' => $employee->department?->name ?? 'Unassigned',
-                        'time_in' => $existing->time_in,
-                        'event_title' => $event->title,
-                        'status' => $existing->status,
-                    ],
-                ];
-            }
+        Log::info('Event found', [
+            'event_id' => $event->id,
+            'attendance_mode' => $event->attendance_mode,
+            'title' => $event->title,
+        ]);
 
-            $checkTime = $timeIn ? Carbon::parse($timeIn) : now();
-
-            // ✅ Only compute late if grace_period > 0
-            $gracePeriod = $event->grace_period ?? 0;
-            if ($gracePeriod > 0) {
-                $deadline = Carbon::parse($event->time)->addMinutes($gracePeriod);
-                $status = $checkTime->lte($deadline) ? 'present' : 'late';
-            } else {
-                $status = 'present';
-            }
-
-            $attendance = DB::transaction(function () use ($employeeId, $eventId, $userId, $remarks, $checkTime, $status) {
-                return Attendance::create([
+        if ($event->attendance_mode !== 'all_employees') {
+            Log::info('Checking if employee is required...');
+            $isRequired = $event->requiredEmployees()->where('employee_id', $employeeId)->exists();
+            if (!$isRequired) {
+                Log::warning('Employee not required for event', [
                     'employee_id' => $employeeId,
                     'event_id' => $eventId,
-                    'time_in' => $checkTime,
-                    'is_manual' => true,
-                    'recorded_by' => $userId,
-                    'remarks' => $remarks,
-                    'status' => $status,
                 ]);
-            });
+                return ['success' => false, 'message' => 'This employee is not assigned to this event.', 'data' => null];
+            }
+        }
 
+        Log::info('Checking for existing attendance...');
+        $existing = Attendance::where('employee_id', $employeeId)
+            ->where('event_id', $eventId)
+            ->first();
+        if ($existing) {
+            Log::info('Existing attendance found', ['attendance_id' => $existing->id]);
             return [
-                'success' => true,
-                'message' => 'Attendance recorded successfully.',
+                'success' => false,
+                'message' => 'Already Checked In',
                 'data' => [
                     'employee_name' => $employee->full_name,
                     'department' => $employee->department?->name ?? 'Unassigned',
-                    'time_in' => $attendance->time_in,
+                    'time_in' => $existing->time_in,
                     'event_title' => $event->title,
-                    'status' => $status,
+                    'status' => $existing->status,
                 ],
             ];
-        } catch (\Exception $e) {
-            Log::error('Manual attendance error: ' . $e->getMessage());
-            return ['success' => false, 'message' => 'An error occurred.', 'data' => null];
         }
+
+        $checkTime = $timeIn ? Carbon::parse($timeIn) : now();
+        Log::info('Check time computed', ['checkTime' => $checkTime->toDateTimeString()]);
+
+        $gracePeriod = $event->grace_period ?? 0;
+        if ($gracePeriod > 0) {
+            $deadline = Carbon::parse($event->time)->addMinutes($gracePeriod);
+            $status = $checkTime->lte($deadline) ? 'present' : 'late';
+        } else {
+            $status = 'present';
+        }
+        Log::info('Status computed', ['status' => $status]);
+
+        Log::info('Starting transaction to create attendance...');
+        $attendance = DB::transaction(function () use ($employeeId, $eventId, $userId, $remarks, $checkTime, $status) {
+            Log::info('Inside transaction, creating attendance...');
+            return Attendance::create([
+                'employee_id' => $employeeId,
+                'event_id' => $eventId,
+                'time_in' => $checkTime,
+                'is_manual' => true,
+                'recorded_by' => $userId,
+                'remarks' => $remarks,
+                'status' => $status,
+            ]);
+        });
+
+        Log::info('Attendance created successfully', ['attendance_id' => $attendance->id]);
+
+        return [
+            'success' => true,
+            'message' => 'Attendance recorded successfully.',
+            'data' => [
+                'employee_name' => $employee->full_name,
+                'department' => $employee->department?->name ?? 'Unassigned',
+                'time_in' => $attendance->time_in,
+                'event_title' => $event->title,
+                'status' => $status,
+            ],
+        ];
+    } catch (\Exception $e) {
+        Log::error('Manual attendance error: ' . $e->getMessage(), [
+            'exception' => $e,
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return ['success' => false, 'message' => 'An error occurred: ' . $e->getMessage(), 'data' => null];
     }
+}
+
+
+
 }

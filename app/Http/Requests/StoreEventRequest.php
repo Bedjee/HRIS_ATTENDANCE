@@ -40,4 +40,15 @@ class StoreEventRequest extends FormRequest
             'time.date_format' => 'The time must be in HH:MM format.',
         ];
     }
+
+    protected function prepareForValidation()
+{
+    if ($this->has('grace_period') && $this->grace_period === '') {
+        $this->merge([
+            'grace_period' => null,
+        ]);
+    }
+}
+
+
 }

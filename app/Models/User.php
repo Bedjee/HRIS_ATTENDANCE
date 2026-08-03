@@ -17,6 +17,7 @@ class User extends Authenticatable
         'must_change_password',
         'status', // new
          'theme', // new
+         
     ];
 
     protected $hidden = [

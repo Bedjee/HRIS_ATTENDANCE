@@ -6,7 +6,6 @@ import HRLayout from '@/Layouts/HRLayout';
 import InputLabel from '@/Components/InputLabel';
 import SelectInput from '@/Components/SelectInput';
 import TextInput from '@/Components/TextInput';
-import PrimaryButton from '@/Components/PrimaryButton';
 import { formatDate, formatTime } from '@/utils/date';
 import {
   Calendar,
@@ -20,6 +19,7 @@ import {
   Download,
   Search,
   UserPlus,
+  Pencil,
 } from 'lucide-react';
 
 export default function Attendance({
@@ -46,6 +46,13 @@ export default function Attendance({
   const [remarks, setRemarks] = useState('');
   const [manualTime, setManualTime] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Status edit modal state
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [editingAttendance, setEditingAttendance] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
+  const [editReason, setEditReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filter departments by cluster
   const filteredDepartments = useMemo(() => {
@@ -187,6 +194,78 @@ export default function Attendance({
     }
   };
 
+  // Open status edit modal
+  const openStatusModal = (item) => {
+    setEditingAttendance(item);
+    setNewStatus(item.status || 'present');
+    setEditReason('');
+    setShowStatusModal(true);
+  };
+
+  // Submit status change
+  const handleStatusUpdate = async () => {
+    if (!editingAttendance) return;
+    if (!editReason.trim()) {
+      toast.error('Please provide a reason for the status change.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.patch(
+        route('hr.attendance.update-status', editingAttendance.id),
+        {
+          status: newStatus,
+          reason: editReason.trim(),
+        }
+      );
+
+      if (response.data.success) {
+        toast.success('Attendance status updated successfully.');
+        setShowStatusModal(false);
+        setEditingAttendance(null);
+        router.reload();
+      } else {
+        toast.error(response.data.message || 'Failed to update status.');
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 422) {
+        const errors = error.response.data.errors;
+        const messages = Object.values(errors).flat().join(' ');
+        toast.error(messages);
+      } else {
+        toast.error(error.response?.data?.message || 'An error occurred.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Get status badge color
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'present':
+        return 'bg-green-100 text-green-800';
+      case 'late':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'absent':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Get status label
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'present': return 'Present';
+      case 'late': return 'Late';
+      case 'absent': return 'Absent';
+      default: return status || 'Unknown';
+    }
+  };
+
+  // ========== RENDER ==========
   return (
     <HRLayout user={auth.user}>
       <Head title={`Attendance - ${event.title}`} />
@@ -302,7 +381,7 @@ export default function Attendance({
               </button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="w-36 sm:w-40">
+              <div className="w-full sm:w-36">
                 <SelectInput
                   value={clusterFilter}
                   onChange={(e) => {
@@ -319,7 +398,7 @@ export default function Attendance({
                   ))}
                 </SelectInput>
               </div>
-              <div className="w-36 sm:w-40">
+              <div className="w-full sm:w-36">
                 <SelectInput
                   value={departmentFilter}
                   onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -333,7 +412,7 @@ export default function Attendance({
                   ))}
                 </SelectInput>
               </div>
-              <div className="relative flex-1 min-w-[140px] sm:min-w-[180px]">
+              <div className="relative flex-1 min-w-[140px] w-full sm:w-auto">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <TextInput
                   type="text"
@@ -349,15 +428,62 @@ export default function Attendance({
                   setDepartmentFilter('');
                   setSearchQuery('');
                 }}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap"
               >
                 Clear
               </button>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm">
+          {/* ====== MOBILE CARD LAYOUT ====== */}
+          <div className="mt-4 space-y-3 sm:hidden">
+            {filteredList.length === 0 ? (
+              <div className="rounded-xl bg-white p-6 text-center text-gray-500 shadow-sm">
+                <Users className="mx-auto h-10 w-10 text-gray-300" />
+                <p className="mt-2 text-sm">No {activeTab} employees found.</p>
+              </div>
+            ) : (
+              filteredList.map((item) => (
+                <div
+                  key={item.id || item.employee_id}
+                  className="rounded-xl bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium text-navy-800">{item.employee_name}</p>
+                      <p className="text-sm text-gray-500">{item.department}</p>
+                      <p className="text-xs text-gray-400">{item.cluster}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(item.status)}`}
+                      >
+                        {getStatusLabel(item.status)}
+                      </span>
+                      {item.id && (
+                        <button
+                          onClick={() => openStatusModal(item)}
+                          className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-navy-600 transition-colors"
+                          title="Edit attendance status"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {(activeTab === 'present' || activeTab === 'late') && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                      <Clock className="h-4 w-4" />
+                      <span>Check‑in: {formatTime(item.time_in)}</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* ====== DESKTOP TABLE LAYOUT ====== */}
+          <div className="mt-4 hidden overflow-hidden rounded-xl bg-white shadow-sm sm:block">
             <div className="overflow-x-auto">
               {filteredList.length === 0 ? (
                 <div className="p-6 text-center text-gray-500 sm:p-8">
@@ -374,40 +500,55 @@ export default function Attendance({
                       <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4 sm:py-3">
                         Department
                       </th>
-                      <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:table-cell sm:px-4 sm:py-3">
+                      <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 md:table-cell md:px-4 md:py-3">
                         Cluster
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4 sm:py-3">
                         {activeTab === 'present' || activeTab === 'late' ? 'Check‑In' : 'Status'}
                       </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4 sm:py-3">
+                        Status
+                      </th>
+                      <th className="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4 sm:py-3">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {filteredList.map((item) => (
-                      <tr key={item.id}>
+                      <tr key={item.id || item.employee_id}>
                         <td className="px-3 py-3 text-sm font-medium text-navy-800 sm:px-4 sm:py-4">
                           {item.employee_name}
                         </td>
                         <td className="px-3 py-3 text-sm text-gray-500 sm:px-4 sm:py-4">
                           {item.department}
                         </td>
-                        <td className="hidden px-3 py-3 text-sm text-gray-500 sm:table-cell sm:px-4 sm:py-4">
+                        <td className="hidden px-3 py-3 text-sm text-gray-500 md:table-cell md:px-4 md:py-4">
                           {item.cluster}
                         </td>
                         <td className="px-3 py-3 text-sm text-gray-500 sm:px-4 sm:py-4">
-                          {activeTab === 'present' || activeTab === 'late' ? (
-                            <>
-                              {formatTime(item.time_in)}
-                              {activeTab === 'late' && (
-                                <span className="ml-2 inline-flex rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                                  Late
-                                </span>
-                              )}
-                            </>
+                          {activeTab === 'present' || activeTab === 'late'
+                            ? formatTime(item.time_in)
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-sm sm:px-4 sm:py-4">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(item.status)}`}
+                          >
+                            {getStatusLabel(item.status)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center sm:px-4 sm:py-4">
+                          {item.id ? (
+                            <button
+                              onClick={() => openStatusModal(item)}
+                              className="inline-flex items-center rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-navy-600 transition-colors"
+                              title="Edit attendance status"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
                           ) : (
-                            <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                              Absent
-                            </span>
+                            <span className="text-xs text-gray-400">—</span>
                           )}
                         </td>
                       </tr>
@@ -422,43 +563,44 @@ export default function Attendance({
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={exportPresent}
-              className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 sm:px-4 sm:py-2 sm:text-sm"
+              className="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-xs text-white hover:bg-green-700 sm:px-4 sm:py-2 sm:text-sm"
             >
               <Download className="mr-1 h-4 w-4" />
-              Export Present
+              Present
             </button>
             <button
               onClick={exportLate}
-              className="inline-flex items-center rounded-md bg-yellow-600 px-3 py-1.5 text-xs text-white hover:bg-yellow-700 sm:px-4 sm:py-2 sm:text-sm"
+              className="inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-xs text-white hover:bg-yellow-700 sm:px-4 sm:py-2 sm:text-sm"
             >
               <Download className="mr-1 h-4 w-4" />
-              Export Late
+              Late
             </button>
             <button
               onClick={exportAbsent}
-              className="inline-flex items-center rounded-md bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700 sm:px-4 sm:py-2 sm:text-sm"
+              className="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 sm:px-4 sm:py-2 sm:text-sm"
             >
               <Download className="mr-1 h-4 w-4" />
-              Export Absent
+              Absent
             </button>
             <button
               onClick={exportAll}
-              className="inline-flex items-center rounded-md bg-navy-700 px-3 py-1.5 text-xs text-white hover:bg-navy-800 sm:px-4 sm:py-2 sm:text-sm"
+              className="inline-flex items-center rounded-md bg-navy-700 px-3 py-2 text-xs text-white hover:bg-navy-800 sm:px-4 sm:py-2 sm:text-sm"
             >
               <Download className="mr-1 h-4 w-4" />
-              Export All
+              All
             </button>
             <button
               onClick={() => setShowManualModal(true)}
-              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700 sm:px-4 sm:py-2 sm:text-sm"
+              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-xs text-white hover:bg-indigo-700 sm:px-4 sm:py-2 sm:text-sm"
             >
               <UserPlus className="mr-1 h-4 w-4" />
-              Manual Attendance
+              Manual
             </button>
           </div>
         </div>
       </div>
 
+      {/* ----- MODALS ----- */}
       {/* Manual Attendance Modal */}
       {showManualModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -468,7 +610,6 @@ export default function Attendance({
               Record attendance for an employee without scanning.
             </p>
 
-            {/* Employee Search */}
             <div className="mt-4">
               <label className="text-sm font-medium text-gray-700">Search Employee</label>
               <input
@@ -483,7 +624,6 @@ export default function Attendance({
               />
             </div>
 
-            {/* Employee list results */}
             {empSearch && (
               <div className="mt-2 max-h-40 overflow-y-auto rounded border border-gray-200">
                 {filteredEmployees.length === 0 ? (
@@ -510,7 +650,6 @@ export default function Attendance({
               </div>
             )}
 
-            {/* Selected Employee Display */}
             {selectedEmployee && (
               <div className="mt-3 rounded-md bg-gray-50 p-3">
                 <p className="text-sm font-medium text-navy-800">{selectedEmployee.name}</p>
@@ -520,7 +659,6 @@ export default function Attendance({
               </div>
             )}
 
-            {/* Remarks */}
             <div className="mt-4">
               <label className="text-sm font-medium text-gray-700">
                 Remarks <span className="text-red-500">*</span>
@@ -540,7 +678,6 @@ export default function Attendance({
               </select>
             </div>
 
-            {/* Optional Time Override */}
             <div className="mt-4">
               <label className="text-sm font-medium text-gray-700">Check‑In Time</label>
               <input
@@ -554,7 +691,6 @@ export default function Attendance({
               </p>
             </div>
 
-            {/* Actions */}
             <div className="mt-6 flex justify-end gap-2">
               <button
                 onClick={() => setShowManualModal(false)}
@@ -567,7 +703,86 @@ export default function Attendance({
                 disabled={saving || !selectedEmployee || !remarks}
                 className="rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 disabled:opacity-50"
               >
-                {saving ? 'Saving...' : 'Record Attendance'}
+                {saving ? 'Saving...' : 'Record'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Edit Modal */}
+      {showStatusModal && editingAttendance && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-navy-800">Edit Attendance Status</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Update the attendance status for {editingAttendance.employee_name}.
+            </p>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Current Status</label>
+                <div className="mt-1">
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(editingAttendance.status)}`}
+                  >
+                    {getStatusLabel(editingAttendance.status)}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Check‑In Time</label>
+                <p className="mt-1 text-sm text-gray-500">
+                  {editingAttendance.time_in ? formatTime(editingAttendance.time_in) : '—'}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  New Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+                >
+                  <option value="present">Present</option>
+                  <option value="late">Late</option>
+                  <option value="absent">Absent</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  placeholder="Explain why the status is being changed..."
+                  rows="3"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowStatusModal(false);
+                  setEditingAttendance(null);
+                }}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusUpdate}
+                disabled={isSubmitting || !editReason.trim()}
+                className="rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Saving...' : 'Update'}
               </button>
             </div>
           </div>

@@ -45,4 +45,9 @@ protected $casts = [
 {
     return $this->belongsTo(User::class, 'recorded_by');
 }
+
+public function statusChanges()
+{
+    return $this->hasMany(AttendanceStatusChange::class)->orderBy('created_at', 'desc');
+}
 }

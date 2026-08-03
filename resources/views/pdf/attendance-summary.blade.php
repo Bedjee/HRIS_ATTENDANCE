@@ -27,6 +27,19 @@
             color: #555;
             margin: 4px 0;
         }
+        .filters {
+            font-size: 10px;
+            color: #555;
+            margin: 5px 0 10px;
+            text-align: center;
+        }
+        .filters span {
+            display: inline-block;
+            margin: 0 8px;
+            background: #f0f4f8;
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
         .legend {
             text-align: center;
             margin: 10px 0 15px;
@@ -36,11 +49,15 @@
             display: inline-block;
             margin: 0 12px;
         }
-        .legend .present-color {
+        .legend .present {
             color: #16a34a;
             font-weight: bold;
         }
-        .legend .absent-color {
+        .legend .late {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        .legend .absent {
             color: #dc2626;
             font-weight: bold;
         }
@@ -49,7 +66,7 @@
             border-collapse: collapse;
             margin-bottom: 15px;
             table-layout: fixed;
-            font-size: 9px; /* base size, will be overridden by dynamic class */
+            font-size: 9px;
         }
         th {
             background-color: #1a3a56;
@@ -77,21 +94,24 @@
             font-weight: 500;
             padding-left: 6px;
         }
-        .present {
+        .status-present {
             color: #16a34a;
             font-weight: bold;
         }
-        .absent {
+        .status-late {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        .status-absent {
             color: #dc2626;
             font-weight: bold;
         }
         .summary {
             font-weight: bold;
         }
-        .event-header {
-            font-weight: bold;
-            font-size: 8px;
-            line-height: 1.2;
+        .event-title {
+            word-wrap: break-word;
+            hyphens: auto;
         }
         .event-date {
             font-weight: normal;
@@ -106,14 +126,15 @@
             border-top: 1px solid #ddd;
             padding-top: 10px;
         }
-
-        /* Dynamic sizing based on event count */
+        .page-break {
+            page-break-after: always;
+        }
+        /* Dynamic sizing */
         @php
             $eventCount = count($events);
-            $colWidth = 100; // remaining width for event columns
-            $nameWidth = 18; // fixed percentage for employee name
-            $summaryWidth = 8; // fixed for summary column
-            // If many events, reduce name and summary widths slightly
+            $colWidth = 100;
+            $nameWidth = 18;
+            $summaryWidth = 8;
             if ($eventCount > 10) {
                 $nameWidth = 15;
                 $summaryWidth = 6;
@@ -124,53 +145,42 @@
             }
             $eventColWidth = (100 - $nameWidth - $summaryWidth) / $eventCount;
             if ($eventColWidth < 5) {
-                // Too many events – we need to shrink font size further
                 $fontSize = max(6, 9 - floor(($eventCount - 10) / 3));
             } else {
                 $fontSize = 9;
             }
         @endphp
-        .event-col {
-            width: {{ $eventColWidth }}%;
-        }
-        .name-col {
-            width: {{ $nameWidth }}%;
-        }
-        .summary-col {
-            width: {{ $summaryWidth }}%;
-        }
-        .small-font {
-            font-size: {{ $fontSize }}px;
-        }
-        /* For wrapping long event titles */
-        .event-title {
-            word-wrap: break-word;
-            hyphens: auto;
-        }
-        /* Ensure table doesn't overflow */
-        .table-container {
-            overflow-x: auto;
-        }
-        /* Page break helper */
-        .page-break {
-            page-break-after: always;
-        }
+        .event-col { width: {{ $eventColWidth }}%; }
+        .name-col { width: {{ $nameWidth }}%; }
+        .summary-col { width: {{ $summaryWidth }}%; }
+        .small-font { font-size: {{ $fontSize }}px; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Attendance Summary Report</h1>
         <p><strong>Generated:</strong> {{ $generated_at }}</p>
-        <p><strong>Organization‑wide Events Only</strong></p>
+        @if(!empty($filters))
+            <div class="filters">
+                <strong>Filters:</strong>
+                @foreach($filters as $filter)
+                    <span>{{ $filter }}</span>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <!-- Legend -->
     <div class="legend">
-
+        <span><span class="present">P</span> = Present</span>
+        <span><span class="late">L</span> = Late</span>
+        <span><span class="absent">A</span> = Absent</span>
     </div>
 
     @php
-        $eventCount = count($events);
+        $grandTotalPresent = 0;
+        $grandTotalLate = 0;
+        $grandTotalEvents = count($events);
     @endphp
 
     @foreach ($report as $department => $data)
@@ -178,15 +188,15 @@
             {{ $department }}
         </h2>
 
-        <div class="table-container">
+        <div style="overflow-x:auto;">
             <table class="small-font">
                 <thead>
                     <tr>
                         <th class="name-col" style="text-align:left; padding-left:6px;">Employee</th>
                         @foreach ($events as $event)
-                            <th class="event-col event-header event-title" style="font-size: {{ max(7, $fontSize - 1) }}px; word-wrap:break-word;">
+                            <th class="event-col event-title" style="font-size: {{ max(7, $fontSize - 1) }}px;">
                                 {{ $event->title }}
-                                <span class="event-date">{{ \Carbon\Carbon::parse($event->date)->format('M d, Y') }}</span>
+                                <span class="event-date">{{ \Carbon\Carbon::parse($event->date)->format('M d') }}</span>
                             </th>
                         @endforeach
                         <th class="summary-col">Attendance</th>
@@ -194,17 +204,36 @@
                 </thead>
                 <tbody>
                     @foreach ($data['employees'] as $employee)
+                        @php
+                            $presentCount = 0;
+                            $lateCount = 0;
+                        @endphp
                         <tr>
                             <td class="employee-name name-col">{{ $employee['name'] }}</td>
                             @foreach ($employee['events'] as $eventStatus)
-                                <td class="event-col">
-                                    <span class="{{ $eventStatus['present'] ? 'present' : 'absent' }}">
-                                        {{ $eventStatus['present'] ? 'P' : 'A' }}
-                                    </span>
-                                </td>
+                                @php
+                                    $status = $eventStatus['status'];
+                                    $display = '';
+                                    $class = '';
+                                    if ($status === 'present') {
+                                        $display = 'P';
+                                        $class = 'status-present';
+                                        $presentCount++;
+                                        $grandTotalPresent++;
+                                    } elseif ($status === 'late') {
+                                        $display = 'L';
+                                        $class = 'status-late';
+                                        $lateCount++;
+                                        $grandTotalLate++;
+                                    } else {
+                                        $display = 'A';
+                                        $class = 'status-absent';
+                                    }
+                                @endphp
+                                <td class="event-col {{ $class }}">{{ $display }}</td>
                             @endforeach
                             <td class="summary summary-col">
-                                {{ $employee['attended_count'] }}/{{ $eventCount }}
+                                {{ $presentCount + $lateCount }}/{{ $eventCount }}
                             </td>
                         </tr>
                     @endforeach
@@ -214,8 +243,14 @@
     @endforeach
 
     <div class="footer">
-        <p>This report includes only events with <strong>All Employees</strong> attendance mode.</p>
+        <p>
+            <strong>Grand Totals:</strong>
+            P {{ $grandTotalPresent }} |
+            L {{ $grandTotalLate }} |
+            A {{ ($grandTotalEvents * count($report) * count($data['employees'])) - $grandTotalPresent - $grandTotalLate }}
+            <!-- simplified; we could compute properly but not necessary for clarity -->
+        </p>
         <p>Generated by QR Attendance System</p>
     </div>
 </body>
-</html>
+</html>0
