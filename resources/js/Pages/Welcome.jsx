@@ -140,11 +140,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         },
     ];
 
-    const dashboardStats = [
-        { label: 'Checked In Today', value: '42', icon: UserCheck, color: 'emerald' },
-        { label: 'Pending Requests', value: '5', icon: Clock, color: 'amber' },
-        { label: 'Upcoming Events', value: '3', icon: Calendar, color: 'blue' },
-    ];
+
+
 
     return (
         <>
@@ -160,18 +157,19 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJmIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc0IiBudW1PY3RhdmVzPSI0IiAvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNmKSIgb3BhY2l0eT0iMC4yIiAvPjwvc3ZnPg==')]"></div>
 
                 {/* Navigation */}
-                <nav className="relative z-20 bg-white/80 backdrop-blur-sm border-b border-slate-200/60 shadow-sm">
+               {/* Navigation – transparent */}
+                <nav className="absolute top-0 left-0 right-0 z-20 bg-transparent border-b border-white/10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <Link href="/" className="flex items-center space-x-3 group">
-                                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-50 border border-amber-200/50 shadow-sm group-hover:shadow-md transition">
-                                    <Landmark className="h-5 w-5 text-amber-700 group-hover:scale-110 transition" />
+                                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 shadow-sm group-hover:shadow-md transition">
+                                    <Landmark className="h-5 w-5 text-white group-hover:scale-110 transition" />
                                 </div>
                                 <div className="hidden xs:block">
-                                    <span className="text-lg font-serif font-bold text-slate-800 tracking-tight">
+                                    <span className="text-lg font-serif font-bold text-white tracking-tight drop-shadow-sm">
                                         LGU HR Portal
                                     </span>
-                                    <span className="block text-[10px] font-medium uppercase tracking-widest text-slate-500 -mt-0.5">
+                                    <span className="block text-[10px] font-medium uppercase tracking-widest text-white/80 -mt-0.5">
                                         Attendance System
                                     </span>
                                 </div>
@@ -180,12 +178,12 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             <div className="hidden md:flex items-center space-x-4">
                                 {auth.user ? (
                                     <div className="flex items-center space-x-3">
-                                        <span className="text-sm text-slate-600">
-                                            Welcome, <span className="font-medium text-slate-800">{auth.user.name}</span>
+                                        <span className="text-sm text-white/90">
+                                            Welcome, <span className="font-medium text-white">{auth.user.name}</span>
                                         </span>
                                         <Link
                                             href={route('dashboard')}
-                                            className="inline-flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition"
+                                            className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white text-sm font-medium rounded-lg border border-white/20 shadow-sm transition"
                                         >
                                             Dashboard
                                             <ArrowRight className="ml-2 h-4 w-4" />
@@ -195,13 +193,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     <>
                                         <Link
                                             href={route('login')}
-                                            className="text-sm font-medium text-slate-600 hover:text-blue-700 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition"
+                                            className="text-sm font-medium text-white/90 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition"
                                         >
                                             Log in
                                         </Link>
                                         <Link
                                             href={route('register')}
-                                            className="inline-flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-sm transition"
+                                            className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white text-sm font-medium rounded-lg border border-white/20 shadow-sm transition"
                                         >
                                             Register
                                         </Link>
@@ -211,24 +209,24 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
                             <button
                                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition"
+                                className="md:hidden p-2 rounded-lg hover:bg-white/10 transition"
                                 aria-label="Toggle menu"
                             >
-                                {mobileMenuOpen ? <X className="h-6 w-6 text-slate-600" /> : <Menu className="h-6 w-6 text-slate-600" />}
+                                {mobileMenuOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
                             </button>
                         </div>
                     </div>
                     {mobileMenuOpen && (
-                        <div className="md:hidden bg-white/95 backdrop-blur-sm border-t border-slate-200/60 shadow-lg">
+                        <div className="md:hidden bg-slate-900/80 backdrop-blur-md border-t border-white/10 shadow-lg">
                             <div className="px-4 py-4 space-y-3">
                                 {auth.user ? (
                                     <>
-                                        <div className="text-sm text-slate-600 pb-2 border-b border-slate-100">
-                                            Welcome, <span className="font-medium text-slate-800">{auth.user.name}</span>
+                                        <div className="text-sm text-white/90 pb-2 border-b border-white/10">
+                                            Welcome, <span className="font-medium text-white">{auth.user.name}</span>
                                         </div>
                                         <Link
                                             href={route('dashboard')}
-                                            className="flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium rounded-lg transition"
+                                            className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition"
                                             onClick={() => setMobileMenuOpen(false)}
                                         >
                                             Dashboard
@@ -239,14 +237,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     <>
                                         <Link
                                             href={route('login')}
-                                            className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 rounded-lg hover:bg-slate-50 transition"
+                                            className="flex items-center px-4 py-2 text-sm font-medium text-white/90 hover:text-white rounded-lg hover:bg-white/10 transition"
                                             onClick={() => setMobileMenuOpen(false)}
                                         >
                                             Log in
                                         </Link>
                                         <Link
                                             href={route('register')}
-                                            className="flex items-center px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium rounded-lg transition"
+                                            className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-lg transition"
                                             onClick={() => setMobileMenuOpen(false)}
                                         >
                                             Register
@@ -268,7 +266,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             className="w-full h-full object-cover"
                         />
                         {/* Dark overlay for readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 via-indigo-900/50 to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-black-900/70 via-black-900/50 to-transparent"></div>
                         {/* Additional subtle gradient overlay for depth */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
                     </div>
@@ -351,32 +349,9 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                 ) : (
                                     <div className="space-y-6">
                                         <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight">
-                                            Welcome back, <span className="text-blue-200">{auth.user.name}</span>
+                                            Welcome back! <span className="text-blue-200">{auth.user.name}</span>
                                         </h1>
-                                        <p className="text-base sm:text-lg text-white/90">
-                                            Here's a quick overview of today's attendance activity.
-                                        </p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                            {dashboardStats.map((stat, index) => {
-                                                const colorMap = {
-                                                    emerald: 'bg-emerald-500/30 border-emerald-400/30 text-emerald-300',
-                                                    amber: 'bg-amber-500/30 border-amber-400/30 text-amber-300',
-                                                    blue: 'bg-blue-500/30 border-blue-400/30 text-blue-300',
-                                                };
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 shadow-sm hover:shadow-md transition"
-                                                    >
-                                                        <div className={`inline-flex p-2 rounded-lg ${colorMap[stat.color]} border mb-2`}>
-                                                            <stat.icon className="h-5 w-5" />
-                                                        </div>
-                                                        <div className="font-serif text-2xl font-bold text-white">{stat.value}</div>
-                                                        <div className="text-xs text-white/70">{stat.label}</div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+
                                         <Link
                                             href={route('dashboard')}
                                             className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition"
