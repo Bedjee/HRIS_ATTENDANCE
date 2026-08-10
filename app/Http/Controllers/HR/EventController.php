@@ -226,37 +226,44 @@ public function required(Event $event)
         $attTime = $presentRecords->get($emp->id);
 
         if ($attTime) {
-            // ✅ Fetch the actual attendance record to get its ID
+            // Fetch the actual attendance record to get its ID and status
             $attendance = Attendance::where('employee_id', $emp->id)
                 ->where('event_id', $event->id)
                 ->first();
 
-            // Build data with the attendance record ID (not employee ID)
+            $status = $attendance->status; // 'present', 'late', or 'absent'
+
+            // Common data
             $attData = [
-                'id' => $attendance->id,               // ← this is the ATTENDANCE ID
+                'id' => $attendance->id,
                 'employee_name' => $emp->full_name,
                 'department' => $emp->department?->name ?? 'Unassigned',
                 'cluster' => $emp->department?->cluster?->name ?? '—',
                 'time_in' => $attTime,
-                'status' => $attendance->status,
+                'status' => $status,
             ];
 
-            if ($attendance->status === 'late') {
+            // Categorize based on the actual status
+            if ($status === 'late') {
                 $late->push($attData);
+            } elseif ($status === 'absent') {
+                $absent->push($attData);
             } else {
+                // 'present' or any other status (treat as present)
                 $present->push($attData);
             }
         } elseif ($isPast) {
-            // No attendance record yet – store employee ID as fallback (edit not possible)
+            // No attendance record yet and event is past → mark as absent
             $absent->push([
-                'id' => null,                          // no attendance ID
-                'employee_id' => $emp->id,            // keep employee ID for reference
+                'id' => null,
+                'employee_id' => $emp->id,
                 'employee_name' => $emp->full_name,
                 'department' => $emp->department?->name ?? 'Unassigned',
                 'cluster' => $emp->department?->cluster?->name ?? '—',
-                 'status' => 'absent',  // ✅ ensures 'Absent' is displayed
+                'status' => 'absent',
             ]);
         }
+        // If event is not past and no record, the employee is not yet categorized
     }
 
     // Build required employees list for manual attendance modal
@@ -297,6 +304,7 @@ public function required(Event $event)
         'isPast' => $isPast,
     ]);
 }
+
 
 
 

@@ -57,24 +57,26 @@ class ReportController extends Controller
     /**
      * Export attendance for a specific event.
      */
-    public function export(Request $request)
-    {
-        $request->validate([
-            'event_id' => ['required', 'integer', 'exists:events,id'],
-            'format' => ['required', 'in:csv,xlsx'],
-            'cluster_id' => ['nullable', 'integer', 'exists:clusters,id'],
-            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
-        ]);
+   public function export(Request $request)
+{
+    $request->validate([
+        'event_id' => ['required', 'integer', 'exists:events,id'],
+        'format'   => ['required', 'in:csv,xlsx'],
+        'cluster_id'   => ['nullable', 'integer', 'exists:clusters,id'],
+        'department_id'=> ['nullable', 'integer', 'exists:departments,id'],
+    ]);
 
-        $filters = $request->only(['cluster_id', 'department_id']);
-        $data = $this->reportService->getAttendanceByEvent($request->event_id, $filters);
-        $attendances = $data['attendances']->toArray();
+    $filters = $request->only(['cluster_id', 'department_id']);
 
-        $event = Event::findOrFail($request->event_id);
-        $filename = 'attendance_' . $event->title . '_' . $event->date . '.' . $request->format;
+    // Use the new method that includes all required employees with status
+    $data = $this->reportService->getFullAttendanceForEvent($request->event_id, $filters);
+    $attendances = $data['attendances']; // array with status
 
-        return Excel::download(new AttendanceExport($attendances), $filename);
-    }
+    $event = Event::findOrFail($request->event_id);
+    $filename = 'attendance_' . $event->title . '_' . $event->date . '.' . $request->format;
+
+    return Excel::download(new AttendanceExport($attendances), $filename);
+}
 
 
 

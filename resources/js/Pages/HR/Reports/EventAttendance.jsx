@@ -19,7 +19,6 @@ export default function EventAttendance({ auth, events, clusters, departments })
   const [exporting, setExporting] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
 
-  // Filter departments based on selected cluster
   const filteredDepartments = departments.filter(
     (dept) => !clusterFilter || dept.cluster_id == clusterFilter
   );
@@ -78,7 +77,6 @@ export default function EventAttendance({ auth, events, clusters, departments })
     }
   };
 
-  // Reset department filter when cluster changes
   useEffect(() => {
     setDepartmentFilter('');
   }, [clusterFilter]);
@@ -95,7 +93,6 @@ export default function EventAttendance({ auth, events, clusters, departments })
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">
             <div className="p-6 sm:p-8">
-              {/* Header with button */}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="text-2xl font-bold text-navy-800">Attendance Reports</h2>
                 <button
@@ -188,7 +185,7 @@ export default function EventAttendance({ auth, events, clusters, departments })
                       {eventDateTime ? `${formatDate(eventDateTime)} at ${formatTime(eventDateTime)}` : '—'} - {attendanceData.event.venue}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Total Attendees: {attendanceData.attendances.length}
+                      Total Employees: {attendanceData.attendances.length}
                     </p>
                     {(clusterFilter || departmentFilter) && (
                       <p className="text-sm text-gray-500">
@@ -200,7 +197,7 @@ export default function EventAttendance({ auth, events, clusters, departments })
                   </div>
 
                   {attendanceData.attendances.length === 0 ? (
-                    <p className="text-gray-500">No attendance records for this event with the selected filters.</p>
+                    <p className="text-gray-500">No employees found for this event with the selected filters.</p>
                   ) : (
                     <>
                       <div className="overflow-x-auto">
@@ -219,25 +216,44 @@ export default function EventAttendance({ auth, events, clusters, departments })
                               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 Time In
                               </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                Status
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200 bg-white">
-                            {attendanceData.attendances.map((record, index) => (
-                              <tr key={index}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {record.employee_name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {record.department}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {record.cluster}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {formatTime(record.time_in)}
-                                </td>
-                              </tr>
-                            ))}
+                            {attendanceData.attendances.map((record, index) => {
+                              const status = record.status || 'absent';
+                              const badgeColor =
+                                status === 'present'
+                                  ? 'bg-green-100 text-green-800'
+                                  : status === 'late'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800';
+                              return (
+                                <tr key={index}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {record.employee_name}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {record.department}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {record.cluster}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {record.time_in ? formatTime(record.time_in) : '—'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span
+                                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badgeColor}`}
+                                    >
+                                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -267,7 +283,6 @@ export default function EventAttendance({ auth, events, clusters, departments })
         </div>
       </div>
 
-      {/* Summary PDF Modal */}
       <SummaryPDFModal
         isOpen={showSummaryModal}
         onClose={() => setShowSummaryModal(false)}

@@ -7,16 +7,16 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class AttendanceExport implements FromArray, WithHeadings
 {
-    protected $attendances;
+    protected $data;
 
-    public function __construct(array $attendances)
+    public function __construct(array $data)
     {
-        $this->attendances = $attendances;
+        $this->data = $data;
     }
 
     public function array(): array
     {
-        return $this->attendances;
+        return $this->data;
     }
 
     public function headings(): array
@@ -26,6 +26,8 @@ class AttendanceExport implements FromArray, WithHeadings
             'Department',
             'Cluster',
             'Time In',
+            'Status',
         ];
     }
+
 }
