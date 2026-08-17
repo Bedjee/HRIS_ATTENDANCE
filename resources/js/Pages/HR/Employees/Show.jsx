@@ -48,6 +48,15 @@ export default function Show({ auth, employee, clusters, departments }) {
       : 'bg-red-100 text-red-800';
   };
 
+  // Helper for employment status badge
+  const employmentStatusBadge = (status) => {
+    const colors = {
+      'Regular': 'bg-blue-100 text-blue-800',
+      'Job Order (JO)': 'bg-purple-100 text-purple-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
   return (
     <HRLayout user={auth.user}>
       <Head title={`Profile - ${employee.full_name}`} />
@@ -122,13 +131,16 @@ export default function Show({ auth, employee, clusters, departments }) {
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge(employee.user?.is_active ?? true)}`}>
                       {employee.user?.is_active ? 'Active' : 'Inactive'}
                     </span>
+                    {/* Employment Status Badge */}
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${employmentStatusBadge(employee.employment_status)}`}>
+                      {employee.employment_status || '—'}
+                    </span>
                   </div>
                   <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 sm:gap-4">
                     <div className="flex items-center gap-2 text-gray-600">
                       <User className="h-4 w-4" />
                       <span>Username: <span className="font-medium">{employee.user?.username || '—'}</span></span>
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -177,6 +189,15 @@ export default function Show({ auth, employee, clusters, departments }) {
                 <div className="flex justify-between border-b border-gray-100 py-1">
                   <dt className="text-gray-500">Cluster</dt>
                   <dd>{employee.department?.cluster?.name || '—'}</dd>
+                </div>
+                {/* Employment Status - NEW */}
+                <div className="flex justify-between border-b border-gray-100 py-1">
+                  <dt className="text-gray-500">Employment Status</dt>
+                  <dd>
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${employmentStatusBadge(employee.employment_status)}`}>
+                      {employee.employment_status || '—'}
+                    </span>
+                  </dd>
                 </div>
                 <div className="flex justify-between border-b border-gray-100 py-1">
                   <dt className="text-gray-500">Employee ID</dt>

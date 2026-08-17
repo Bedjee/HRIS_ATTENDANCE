@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use App\Models\Employee;
 use App\Models\Event;
+use Barryvdh\DomPDF\Facade\Pdf;   // <-- NEW
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -303,6 +304,78 @@ public function required(Event $event)
         'departments' => $departments,
         'isPast' => $isPast,
     ]);
+}
+
+
+ // ===== NEW PDF METHOD =====
+    public function attendancePdf(Request $request, Event $event)
+    {
+        $status = $request->input('status', 'all');
+        $allowed = ['present', 'absent', 'late', 'all'];
+        if (!in_array($status, $allowed)) {
+            $status = 'all';
+        }
+
+        $requiredEmployees = $event->requiredEmployees()
+            ->with(['department.cluster', 'user'])
+            ->get();
+
+        $presentRecords = Attendance::where('event_id', $event->id)
+            ->pluck('time_in', 'employee_id');
+
+        $eventDate = Carbon::parse($event->date . ' ' . $event->time);
+        $isPast = $eventDate->isPast();
+
+        $attendanceData = [];
+
+        foreach ($requiredEmployees as $emp) {
+            $attTime = $presentRecords->get($emp->id);
+            $attStatus = null;
+
+            if ($attTime) {
+                $attendance = Attendance::where('employee_id', $emp->id)
+                    ->where('event_id', $event->id)
+                    ->first();
+                $attStatus = $attendance->status;
+            } elseif ($isPast) {
+                $attStatus = 'absent';
+            } else {
+                // Not recorded and event not past – skip
+                continue;
+            }
+
+            if ($status !== 'all' && $attStatus !== $status) {
+                continue;
+            }
+
+
+
+            $attendanceData[] = [
+                'employee_name' => $emp->full_name,
+                'department'    => $emp->department?->name ?? 'Unassigned',
+                'cluster'       => $emp->department?->cluster?->name ?? '—',
+                'status'        => $attStatus,
+                'time_in' => $attTime ? Carbon::parse($attTime)->format('g:i A') : '—',
+            ];
+        }
+
+        usort($attendanceData, fn($a, $b) => strcmp($a['employee_name'], $b['employee_name']));
+
+        // Define logo paths (adjust as needed)
+    $logoLeft = public_path('images/logoLeft.png');
+    $logoRight = public_path('images/logoRight.png');
+
+    $pdf = Pdf::loadView('pdf.attendance', [
+        'event'           => $event,
+        'attendanceData'  => $attendanceData,
+        'status'          => $status,
+        'generated_at'    => now(),
+        'logoLeft'        => $logoLeft,
+        'logoRight'       => $logoRight,
+    ]);
+
+    $filename = "attendance_{$event->title}_{$event->date}_{$status}.pdf";
+    return $pdf->download($filename);
 }
 
 

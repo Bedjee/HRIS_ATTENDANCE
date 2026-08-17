@@ -44,71 +44,80 @@ class AnalyticsService
         ];
     }
 
-    public function getAttendanceByCluster($filters = [])
-    {
-        $query = Cluster::query()
-            ->withCount(['employees' => function ($q) use ($filters) {
-                $q->whereHas('attendances', function ($sq) use ($filters) {
-                    if (!empty($filters['event_id'])) {
-                        $sq->where('event_id', $filters['event_id']);
-                    }
-                    if (!empty($filters['year'])) {
-                        $sq->whereYear('time_in', $filters['year']);
-                    }
-                });
-            }]);
+   public function getAttendanceByCluster($filters = [])
+{
+    $query = Cluster::query()
+        ->withCount(['employees' => function ($q) use ($filters) {
+            $q->whereHas('attendances', function ($sq) use ($filters) {
+                // Only count attendances with status 'present' or 'late'
+                $sq->whereIn('status', ['present', 'late']);
+                if (!empty($filters['event_id'])) {
+                    $sq->where('event_id', $filters['event_id']);
+                }
+                if (!empty($filters['year'])) {
+                    $sq->whereYear('time_in', $filters['year']);
+                }
+            });
+        }]);
 
-        $clusters = $query->get();
+    $clusters = $query->get();
 
-        $labels = $clusters->pluck('name')->toArray();
-        $data = $clusters->pluck('employees_count')->toArray();
+    $labels = $clusters->pluck('name')->toArray();
+    $data = $clusters->pluck('employees_count')->toArray();
 
-        return [
-            'labels' => $labels,
-            'datasets' => [
-                [
-                    'label' => 'Employees who attended',
-                    'data' => $data,
-                    'backgroundColor' => ['#2a5e85', '#4f7a9c', '#7696b3', '#9eb3c9', '#c5d0df'],
-                ],
+    return [
+        'labels' => $labels,
+        'datasets' => [
+            [
+                'label' => 'Employees who attended',
+                'data' => $data,
+                'backgroundColor' => ['#2a5e85', '#4f7a9c', '#7696b3', '#9eb3c9', '#c5d0df'],
             ],
-        ];
+        ],
+    ];
+}
+
+
+
+  public function getAttendanceByDepartment($filters = [])
+{
+    $query = Department::query()
+        ->withCount(['employees' => function ($q) use ($filters) {
+            $q->whereHas('attendances', function ($sq) use ($filters) {
+                // Only count attendances with status 'present' or 'late'
+                $sq->whereIn('status', ['present', 'late']);
+                if (!empty($filters['event_id'])) {
+                    $sq->where('event_id', $filters['event_id']);
+                }
+                if (!empty($filters['year'])) {
+                    $sq->whereYear('time_in', $filters['year']);
+                }
+            });
+        }]);
+
+    if (!empty($filters['cluster_id'])) {
+        $query->where('cluster_id', $filters['cluster_id']);
     }
 
-    public function getAttendanceByDepartment($filters = [])
-    {
-        $query = Department::query()
-            ->withCount(['employees' => function ($q) use ($filters) {
-                $q->whereHas('attendances', function ($sq) use ($filters) {
-                    if (!empty($filters['event_id'])) {
-                        $sq->where('event_id', $filters['event_id']);
-                    }
-                    if (!empty($filters['year'])) {
-                        $sq->whereYear('time_in', $filters['year']);
-                    }
-                });
-            }]);
+    $departments = $query->get();
 
-        if (!empty($filters['cluster_id'])) {
-            $query->where('cluster_id', $filters['cluster_id']);
-        }
+    $labels = $departments->pluck('name')->toArray();
+    $data = $departments->pluck('employees_count')->toArray();
 
-        $departments = $query->get();
-
-        $labels = $departments->pluck('name')->toArray();
-        $data = $departments->pluck('employees_count')->toArray();
-
-        return [
-            'labels' => $labels,
-            'datasets' => [
-                [
-                    'label' => 'Employees who attended',
-                    'data' => $data,
-                    'backgroundColor' => '#2a5e85',
-                ],
+    return [
+        'labels' => $labels,
+        'datasets' => [
+            [
+                'label' => 'Employees who attended',
+                'data' => $data,
+                'backgroundColor' => '#2a5e85',
             ],
-        ];
-    }
+        ],
+    ];
+}
+
+
+
 
     public function getMonthlyTrend($filters = [])
     {
@@ -119,6 +128,7 @@ class AnalyticsService
             DB::raw('COUNT(*) as total')
         )
             ->whereYear('time_in', $year)
+             ->whereIn('status', ['present', 'late'])
             ->groupBy('month')
             ->orderBy('month');
 
@@ -164,18 +174,22 @@ class AnalyticsService
         ];
     }
 
-    public function getTopEvents($limit = 5, $filters = [])
-    {
-        $query = Event::withCount('attendances')
-            ->orderBy('attendances_count', 'desc')
-            ->limit($limit);
+ public function getTopEvents($limit = 5, $filters = [])
+{
+    $query = Event::withCount(['attendances' => function ($q) {
+        $q->whereIn('status', ['present', 'late']);
+    }])
+        ->orderBy('attendances_count', 'desc')
+        ->limit($limit);
 
-        if (!empty($filters['year'])) {
-            $query->whereYear('date', $filters['year']);
-        }
-
-        return $query->get(['id', 'title', 'date', 'attendances_count']);
+    if (!empty($filters['year'])) {
+        $query->whereYear('date', $filters['year']);
     }
+
+    return $query->get(['id', 'title', 'date', 'attendances_count']);
+}
+
+
 
     public function getLeastEvents($limit = 5, $filters = [])
     {
@@ -190,25 +204,30 @@ class AnalyticsService
         return $query->get(['id', 'title', 'date', 'attendances_count']);
     }
 
-    public function getTopEmployees($limit = 5, $filters = [])
-    {
-        $query = Employee::withCount('attendances')
-            ->with('department.cluster')
-            ->orderBy('attendances_count', 'desc')
-            ->limit($limit);
+   public function getTopEmployees($limit = 5, $filters = [])
+{
+    $query = Employee::withCount(['attendances' => function ($q) {
+        $q->whereIn('status', ['present', 'late']);
+    }])
+        ->with('department.cluster')
+        ->orderBy('attendances_count', 'desc')
+        ->limit($limit);
 
-        if (!empty($filters['cluster_id'])) {
-            $query->whereHas('department', function ($q) use ($filters) {
-                $q->where('cluster_id', $filters['cluster_id']);
-            });
-        }
-
-        if (!empty($filters['department_id'])) {
-            $query->where('department_id', $filters['department_id']);
-        }
-
-        return $query->get();
+    if (!empty($filters['cluster_id'])) {
+        $query->whereHas('department', function ($q) use ($filters) {
+            $q->where('cluster_id', $filters['cluster_id']);
+        });
     }
+
+    if (!empty($filters['department_id'])) {
+        $query->where('department_id', $filters['department_id']);
+    }
+
+    return $query->get();
+}
+
+
+
 
     public function getInactiveEmployees($limit = 10, $filters = [])
     {

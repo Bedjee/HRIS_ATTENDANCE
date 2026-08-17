@@ -6,8 +6,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import SelectInput from '@/Components/SelectInput';
 import InputError from '@/Components/InputError';
-import PrimaryButton from '@/Components/PrimaryButton';
-import { ArrowLeft, User, Building2, Plus } from 'lucide-react';
+import { ArrowLeft, User, Building2 } from 'lucide-react';
 
 export default function Create({ auth, departments }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -15,22 +14,18 @@ export default function Create({ auth, departments }) {
         last_name: '',
         middle_initial: '',
         department_id: '',
+        employment_status: 'Regular', // default
     });
+
+    const statusOptions = ['Regular', 'Job Order (JO)'];
 
     const submit = (e) => {
         e.preventDefault();
         post(route('hr.employees.store'), {
-            onSuccess: () => {
-                toast.success('Employee created successfully.');
-            },
+            onSuccess: () => toast.success('Employee created successfully.'),
             onError: (errors) => {
-                // Show first validation error as a toast
                 const firstError = Object.values(errors)[0]?.[0];
-                if (firstError) {
-                    toast.error(firstError);
-                } else {
-                    toast.error('Failed to create employee.');
-                }
+                toast.error(firstError || 'Failed to create employee.');
             },
         });
     };
@@ -38,14 +33,10 @@ export default function Create({ auth, departments }) {
     return (
         <HRLayout user={auth.user}>
             <Head title="Add Employee" />
-
             <div className="py-8 sm:py-12">
                 <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
                     <div className="mb-6 flex items-center">
-                        <Link
-                            href={route('hr.employees.index')}
-                            className="mr-4 rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        >
+                        <Link href={route('hr.employees.index')} className="mr-4 rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <div>
@@ -129,6 +120,26 @@ export default function Create({ auth, departments }) {
                                         </SelectInput>
                                     </div>
                                     <InputError message={errors.department_id} className="mt-2" />
+                                </div>
+
+                                {/* Employment Status - NEW */}
+                                <div>
+                                    <InputLabel htmlFor="employment_status" value="Employment Status" />
+                                    <div className="relative mt-1">
+                                        <SelectInput
+                                            id="employment_status"
+                                            value={data.employment_status}
+                                            onChange={(e) => setData('employment_status', e.target.value)}
+                                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+                                            required
+                                        >
+                                            <option value="">Select status</option>
+                                            {statusOptions.map((status) => (
+                                                <option key={status} value={status}>{status}</option>
+                                            ))}
+                                        </SelectInput>
+                                    </div>
+                                    <InputError message={errors.employment_status} className="mt-2" />
                                 </div>
 
                                 {/* Actions */}

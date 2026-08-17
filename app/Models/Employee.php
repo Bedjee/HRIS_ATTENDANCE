@@ -9,6 +9,9 @@ class Employee extends Model
 {
     use HasFactory;
 
+    const STATUS_REGULAR   = 'Regular';
+const STATUS_JOB_ORDER = 'Job Order (JO)';
+
    protected $fillable = [
     'user_id',
     'first_name',
@@ -17,6 +20,7 @@ class Employee extends Model
     'department_id', // replace 'department'
     'qr_token',
     'profile_photo',
+     'employment_status',  // new
 ];
 
     protected $appends = ['full_name', 'formatted_name', 'profile_photo_url'];
@@ -76,6 +80,17 @@ public function getProfilePhotoUrlAttribute()
         'employeeId' => $this->id,
         'filename' => basename($this->profile_photo),
     ]);
+}
+
+
+
+// Add this method anywhere inside the class
+public static function getStatuses(): array
+{
+    return [
+        self::STATUS_REGULAR,
+        self::STATUS_JOB_ORDER,
+    ];
 }
 
 }

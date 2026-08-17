@@ -151,6 +151,8 @@ Route::patch('/employees/{employee}', [EmployeeController::class, 'update'])->na
 
     Route::get('/events/{event}/attendance', [EventController::class, 'attendance'])->name('hr.events.attendance');
     Route::get('/events/{event}/required', [EventController::class, 'required'])->name('hr.events.required');
+    Route::get('/events/{event}/attendance-pdf', [EventController::class, 'attendancePdf'])
+    ->name('hr.events.attendance-pdf');
 
     // Attendance Scanning
     Route::get('/attendance/scan', [AttendanceController::class, 'scan'])->name('hr.attendance.scan');

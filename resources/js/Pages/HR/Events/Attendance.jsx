@@ -61,6 +61,10 @@ export default function Attendance({
     );
   }, [departments, clusterFilter]);
 
+
+  // ===== NEW: PDF status filter =====
+  const [pdfStatus, setPdfStatus] = useState('all');
+
   // Current list based on active tab
   const currentList = activeTab === 'present' ? present : activeTab === 'late' ? late : absent;
 
@@ -596,6 +600,31 @@ export default function Attendance({
               <UserPlus className="mr-1 h-4 w-4" />
               Manual
             </button>
+             {/* PDF Export */}
+  <select
+    value={pdfStatus}
+    onChange={(e) => setPdfStatus(e.target.value)}
+    className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-navy-500 focus:ring-navy-500"
+  >
+    <option value="all">All</option>
+    <option value="present">Present</option>
+    <option value="late">Late</option>
+    <option value="absent">Absent</option>
+  </select>
+  <button
+    onClick={() => {
+      const url = route('hr.events.attendance-pdf', {
+        event: event.id,
+        status: pdfStatus,
+      });
+      window.location.href = url;
+    }}
+    className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+  >
+    <Download className="mr-1 h-4 w-4" />
+    PDF
+  </button>
+
           </div>
         </div>
       </div>

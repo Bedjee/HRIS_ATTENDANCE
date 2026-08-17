@@ -23,50 +23,60 @@ class EmployeeController extends Controller
     /**
      * Display a listing of employees with search.
      */
-   public function index(Request $request)
-{
-    $search = $request->input('search', '');
-    $clusterId = $request->input('cluster_id');
-    $departmentId = $request->input('department_id');
+    public function index(Request $request)
+    {
+        $search = $request->input('search', '');
+        $clusterId = $request->input('cluster_id');
+        $departmentId = $request->input('department_id');
+        $statusFilter = $request->input('employment_status'); // new
 
-    $employees = Employee::with(['user', 'department.cluster'])
-        ->when($search, function ($query) use ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('username', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('department', function ($dq) use ($search) {
-                      $dq->where('name', 'like', "%{$search}%");
-                  });
-            });
-        })
-        ->when($clusterId, function ($query) use ($clusterId) {
-            $query->whereHas('department', function ($q) use ($clusterId) {
-                $q->where('cluster_id', $clusterId);
-            });
-        })
-        ->when($departmentId, function ($query) use ($departmentId) {
-            $query->where('department_id', $departmentId);
-        })
-        ->orderBy('last_name')
-        ->paginate(10);
+        $employees = Employee::with(['user', 'department.cluster'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search) {
+                          $uq->where('username', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('department', function ($dq) use ($search) {
+                          $dq->where('name', 'like', "%{$search}%");
+                      });
+                });
+            })
+            ->when($clusterId, function ($query) use ($clusterId) {
+                $query->whereHas('department', function ($q) use ($clusterId) {
+                    $q->where('cluster_id', $clusterId);
+                });
+            })
+            ->when($departmentId, function ($query) use ($departmentId) {
+                $query->where('department_id', $departmentId);
+            })
+            ->when($statusFilter, function ($query) use ($statusFilter) {
+                $query->where('employment_status', $statusFilter);
+            })
+            ->orderBy('last_name')
+            ->paginate(10);
 
-    $clusters = Cluster::select('id', 'name')->get();
-    $departments = Department::select('id', 'name', 'cluster_id')->get();
+        $clusters = Cluster::select('id', 'name')->get();
+        $departments = Department::select('id', 'name', 'cluster_id')->get();
+        $statuses = Employee::getStatuses(); // new
 
-    return Inertia::render('HR/Employees/Index', [
-        'employees' => $employees,
-        'clusters' => $clusters,
-        'departments' => $departments,
-        'filters' => [
-            'search' => $search,
-            'cluster_id' => $clusterId,
-            'department_id' => $departmentId,
-        ],
-    ]);
-}
+        return Inertia::render('HR/Employees/Index', [
+            'employees' => $employees,
+            'clusters' => $clusters,
+            'departments' => $departments,
+            'statuses' => $statuses, // pass to frontend
+            'filters' => [
+                'search' => $search,
+                'cluster_id' => $clusterId,
+                'department_id' => $departmentId,
+                'employment_status' => $statusFilter,
+            ],
+        ]);
+    }
+
+
+
 
     /**
      * Reset employee password to default.
@@ -108,16 +118,7 @@ public function create()
     ]);
 }
 
-public function store(StoreEmployeeRequest $request, EmployeeImportService $importService)
-{
-    try {
-        $employee = $importService->createEmployeeFromData($request->validated());
-        return redirect()->route('hr.employees.index')
-            ->with('success', 'Employee created successfully.');
-    } catch (\Exception $e) {
-        return back()->with('error', 'Failed to create employee: ' . $e->getMessage());
-    }
-}
+
 
 
 public function exportCredentials()
@@ -155,39 +156,54 @@ public function edit(Employee $employee)
 /**
  * Update the specified employee.
  */
-public function update(UpdateEmployeeRequest $request, Employee $employee)
-{
-    $data = $request->validated();
-
-    // Update employee fields
-    $employee->update([
-        'first_name' => $data['first_name'],
-        'last_name' => $data['last_name'],
-        'middle_initial' => $data['middle_initial'] ?? null,
-        'department_id' => $data['department_id'],
-    ]);
-
-    // Update user account fields – map is_active to status
-    $userData = [];
-    if (isset($data['username'])) {
-        $userData['username'] = $data['username'];
-    }
-    if (isset($data['is_active'])) {
-        $userData['status'] = $data['is_active'] ? 'active' : 'inactive';
-    }
-    if (!empty($userData)) {
-        $employee->user->update($userData);
+  public function store(StoreEmployeeRequest $request, EmployeeImportService $importService)
+    {
+        try {
+            $data = $request->validated();
+            // The service will handle creation; make sure it sets employment_status
+            $employee = $importService->createEmployeeFromData($data);
+            return redirect()->route('hr.employees.index')
+                ->with('success', 'Employee created successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to create employee: ' . $e->getMessage());
+        }
     }
 
-    // Handle photo upload
-    if ($request->hasFile('profile_photo')) {
-        $path = $request->file('profile_photo')->store('profile_photos', 'public');
-        $employee->profile_photo = $path;
-        $employee->save();
-    }
+    public function update(UpdateEmployeeRequest $request, Employee $employee)
+    {
+        $data = $request->validated();
 
-    return redirect()->route('hr.employees.show', $employee)
-        ->with('success', 'Employee updated successfully.');
-}
+        $employee->update([
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'middle_initial' => $data['middle_initial'] ?? null,
+            'department_id' => $data['department_id'],
+            'employment_status' => $data['employment_status'] ?? $employee->employment_status,
+        ]);
+
+        // Update user account
+        if (isset($data['username']) || isset($data['is_active'])) {
+            $userData = [];
+            if (isset($data['username'])) {
+                $userData['username'] = $data['username'];
+            }
+            if (isset($data['is_active'])) {
+                $userData['status'] = $data['is_active'] ? 'active' : 'inactive';
+            }
+            if (!empty($userData)) {
+                $employee->user->update($userData);
+            }
+        }
+
+        // Handle photo
+        if ($request->hasFile('profile_photo')) {
+            $path = $request->file('profile_photo')->store('profile_photos', 'public');
+            $employee->profile_photo = $path;
+            $employee->save();
+        }
+
+        return redirect()->route('hr.employees.show', $employee)
+            ->with('success', 'Employee updated successfully.');
+    }
 
 }
