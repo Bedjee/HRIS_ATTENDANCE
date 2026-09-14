@@ -25,16 +25,18 @@ class AttendanceController extends Controller
     /**
      * Show the scan attendance page.
      */
-    public function scan(Request $request)
-    {
-        // Get all events for dropdown selection
-        $events = \App\Models\Event::orderBy('date', 'desc')->get(['id', 'title', 'date', 'time', 'venue']);
+public function scan(Request $request)
+{
+    $events = \App\Models\Event::query()
+        ->where('status', 'ongoing')          // only ongoing events
+        ->orderBy('time')
+        ->get(['id', 'title', 'date', 'time', 'venue', 'status']);
 
-        return Inertia::render('HR/Attendance/Scan', [
-            'events' => $events,
-            'selectedEventId' => $request->query('event_id') ?? null,
-        ]);
-    }
+    return Inertia::render('HR/Attendance/Scan', [
+        'events' => $events,
+        'selectedEventId' => $request->query('event_id') ?? null,
+    ]);
+}
 
     /**
      * API endpoint to process a QR scan.
