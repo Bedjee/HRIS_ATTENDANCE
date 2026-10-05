@@ -2,255 +2,301 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Attendance Summary Report</title>
+    <title>Attendance - {{ $event->title }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ---- Global & Page Setup ---- */
         body {
-            font-family: 'DejaVu Sans', sans-serif;
             margin: 20px;
-            font-size: 11px;
-            line-height: 1.4;
+            margin-bottom: 85px;   /* space for fixed footer */
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 12px;
+            padding: 0;
+            background: #fff;
         }
+        /* ---- Header ---- */
         .header {
-            text-align: center;
-            margin-bottom: 20px;
+            border-bottom: 3px solid #1e3a5f;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
-        .header h1 {
-            font-size: 22px;
-            color: #1a3a56;
-        }
-        .header p {
-            color: #555;
-            margin: 4px 0;
-        }
-        .filters {
-            font-size: 10px;
-            color: #555;
-            margin: 5px 0 10px;
-            text-align: center;
-        }
-        .filters span {
-            display: inline-block;
-            margin: 0 8px;
-            background: #f0f4f8;
-            padding: 2px 10px;
-            border-radius: 12px;
-        }
-        .legend {
-            text-align: center;
-            margin: 10px 0 15px;
-            font-size: 10px;
-        }
-        .legend span {
-            display: inline-block;
-            margin: 0 12px;
-        }
-        .legend .present {
-            color: #16a34a;
-            font-weight: bold;
-        }
-        .legend .late {
-            color: #f59e0b;
-            font-weight: bold;
-        }
-        .legend .absent {
-            color: #dc2626;
-            font-weight: bold;
-        }
-        table {
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
-            table-layout: fixed;
-            font-size: 9px;
         }
-        th {
-            background-color: #1a3a56;
-            color: white;
-            padding: 5px 4px;
+        .header-table td {
+            vertical-align: middle;
+            padding: 0;
+            border: none;
+        }
+        .header-logo-left {
+            width: 100px;
             text-align: center;
-            border: 1px solid #ccc;
+        }
+        .header-logo-left img {
+            max-height: 60px;
+            max-width: 80px;
             vertical-align: middle;
         }
-        td {
-            padding: 4px 3px;
-            border: 1px solid #ccc;
+        .header-logo-right {
+            width: 140px;
             text-align: center;
+        }
+        .header-logo-right img {
+            max-height: 80px;
+            max-width: 120px;
             vertical-align: middle;
         }
-        .department-header {
-            background-color: #e8edf3;
+        .header-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #1e3a5f;
+            text-transform: uppercase;
+        }
+        /* ---- Event Details ---- */
+        .event-details {
+            margin-bottom: 20px;
+        }
+        .event-details table {
+            border-collapse: collapse;
+            font-size: 13px;
+            width: auto;
+        }
+        .event-details td {
+            padding: 2px 10px 2px 0;
+            border: none;
+        }
+        .event-details .label {
             font-weight: bold;
-            text-align: left;
-            padding: 6px 8px;
-            font-size: 12px;
+            color: #1e293b;
+            width: 100px;
+            vertical-align: top;
         }
-        .employee-name {
+        .event-details .value {
+            color: #1e293b;
+            vertical-align: top;
+        }
+        /* ---- Status filter ---- */
+        .status-filter {
+            text-align: right;
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .status-filter strong {
+            color: #1e3a5f;
+        }
+        /* ---- Attendance Table ---- */
+        table.attendance {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+        table.attendance th {
+            background: #1e3a5f;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 8px 6px;
             text-align: left;
-            font-weight: 500;
-            padding-left: 6px;
+            border: 1px solid #1e3a5f;
+        }
+        table.attendance td {
+            padding: 7px 6px;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+        table.attendance tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: capitalize;
         }
         .status-present {
-            color: #16a34a;
-            font-weight: bold;
+            background: #dcfce7;
+            color: #166534;
         }
         .status-late {
-            color: #f59e0b;
-            font-weight: bold;
+            background: #fef9c3;
+            color: #854d0e;
         }
         .status-absent {
-            color: #dc2626;
-            font-weight: bold;
+            background: #fee2e2;
+            color: #991b1b;
         }
-        .summary {
-            font-weight: bold;
+        .emp-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
         }
-        .event-title {
-            word-wrap: break-word;
-            hyphens: auto;
+        .emp-regular {
+            background: #e0e7ff;
+            color: #3730a3;
         }
-        .event-date {
-            font-weight: normal;
-            font-size: 7px;
-            display: block;
+        .emp-jo {
+            background: #fef3c7;
+            color: #92400e;
         }
-        .footer {
+        /* ---- Empty state ---- */
+        .empty {
             text-align: center;
-            font-size: 9px;
-            color: #888;
-            margin-top: 15px;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
+            padding: 40px 0;
+            color: #94a3b8;
+            font-size: 14px;
         }
-        .page-break {
-            page-break-after: always;
+        /* ---- Fallback for missing logos ---- */
+        .no-logo {
+            display: inline-block;
+            width: 80px;
         }
-        /* Dynamic sizing */
-        @php
-            $eventCount = count($events);
-            $colWidth = 100;
-            $nameWidth = 18;
-            $summaryWidth = 8;
-            if ($eventCount > 10) {
-                $nameWidth = 15;
-                $summaryWidth = 6;
-            }
-            if ($eventCount > 15) {
-                $nameWidth = 12;
-                $summaryWidth = 5;
-            }
-            $eventColWidth = (100 - $nameWidth - $summaryWidth) / $eventCount;
-            if ($eventColWidth < 5) {
-                $fontSize = max(6, 9 - floor(($eventCount - 10) / 3));
-            } else {
-                $fontSize = 9;
-            }
-        @endphp
-        .event-col { width: {{ $eventColWidth }}%; }
-        .name-col { width: {{ $nameWidth }}%; }
-        .summary-col { width: {{ $summaryWidth }}%; }
-        .small-font { font-size: {{ $fontSize }}px; }
+        /* ---- FIXED FOOTER (appears on every page) ---- */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #f8fafc;
+            border-top: 2px solid #1e3a5f;
+            padding: 6px 20px;
+            font-size: 8.5px;
+            color: #334155;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .footer .office {
+            font-weight: 700;
+            color: #1e3a5f;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .footer .statement {
+            font-style: italic;
+            margin-top: 1px;
+        }
+        .footer .generated {
+            font-size: 8px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .footer .generated span {
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+    <!-- ===== HEADER ===== -->
     <div class="header">
-        <h1>Attendance Summary Report</h1>
-        <p><strong>Generated:</strong> {{ $generated_at }}</p>
-        @if(!empty($filters))
-            <div class="filters">
-                <strong>Filters:</strong>
-                @foreach($filters as $filter)
-                    <span>{{ $filter }}</span>
-                @endforeach
-            </div>
+        <table class="header-table">
+            <tr>
+                <td class="header-logo-left">
+                    @if(file_exists($logoLeft))
+                        <img src="{{ $logoLeft }}" alt="Logo Left">
+                    @else
+                        <span class="no-logo"></span>
+                    @endif
+                </td>
+                <td class="header-title">ATTENDANCE</td>
+                <td class="header-logo-right">
+                    @if(file_exists($logoRight))
+                        <img src="{{ $logoRight }}" alt="Logo Right">
+                    @else
+                        <span class="no-logo"></span>
+                    @endif
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ===== EVENT DETAILS ===== -->
+    <div class="event-details">
+        <table>
+            <tr>
+                <td class="label">Activity:</td>
+                <td class="value">{{ $event->title }}</td>
+            </tr>
+            <tr>
+                <td class="label">Venue:</td>
+                <td class="value">{{ $event->venue }}</td>
+            </tr>
+            <tr>
+                <td class="label">Activity date:</td>
+                <td class="value">{{ \Carbon\Carbon::parse($event->date . ' ' . $event->time)->format('F j, Y g:i A') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ===== FILTER SUMMARY ===== -->
+    <div class="status-filter">
+        Showing:
+        <strong>{{ $status === 'all' ? 'All Attendance' : ucfirst($status) }}</strong>
+        @if(!empty($employmentStatus) && $employmentStatus !== 'all')
+            &nbsp;•&nbsp; Employment: <strong>{{ $employmentStatus }}</strong>
+        @else
+            &nbsp;•&nbsp; Employment: <strong>All</strong>
         @endif
     </div>
 
-    <!-- Legend -->
-    <div class="legend">
-        <span><span class="present">P</span> = Present</span>
-        <span><span class="late">L</span> = Late</span>
-        <span><span class="absent">A</span> = Absent</span>
-    </div>
-
-    @php
-        $grandTotalPresent = 0;
-        $grandTotalLate = 0;
-        $grandTotalEvents = count($events);
-    @endphp
-
-    @foreach ($report as $department => $data)
-        <h2 style="margin: 18px 0 8px; background-color: #f0f4f8; padding: 5px 10px; border-left: 4px solid #1a3a56; font-size: 13px;">
-            {{ $department }}
-        </h2>
-
-        <div style="overflow-x:auto;">
-            <table class="small-font">
-                <thead>
+    <!-- ===== ATTENDANCE TABLE ===== -->
+    @if(count($attendanceData) > 0)
+        <table class="attendance">
+            <thead>
+                <tr>
+                    <th style="width: 35px; text-align: center;">#</th>
+                    <th style="text-align: left;">Employee Name</th>
+                    <th style="text-align: left;">Department</th>
+                    <th style="text-align: left;">Cluster</th>
+                    <th style="text-align: left;">Employment Status</th>
+                    <th style="text-align: left;">Check‑In</th>
+                    <th style="text-align: left;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($attendanceData as $index => $record)
                     <tr>
-                        <th class="name-col" style="text-align:left; padding-left:6px;">Employee</th>
-                        @foreach ($events as $event)
-                            <th class="event-col event-title" style="font-size: {{ max(7, $fontSize - 1) }}px;">
-                                {{ $event->title }}
-                                <span class="event-date">{{ \Carbon\Carbon::parse($event->date)->format('M d') }}</span>
-                            </th>
-                        @endforeach
-                        <th class="summary-col">Attendance</th>
+                        <td style="text-align: center;">{{ $index + 1 }}</td>
+                        <td>{{ $record['employee_name'] }}</td>
+                        <td>{{ $record['department'] }}</td>
+                        <td>{{ $record['cluster'] }}</td>
+                        <td>
+                            @php
+                                $emp = $record['employment_status'] ?? '—';
+                                $empClass = str_contains($emp, 'Job') ? 'emp-jo' : (str_contains($emp, 'Regular') ? 'emp-regular' : '');
+                            @endphp
+                            @if($empClass)
+                                <span class="emp-badge {{ $empClass }}">{{ $emp }}</span>
+                            @else
+                                {{ $emp }}
+                            @endif
+                        </td>
+                        <td>{{ $record['time_in'] }}</td>
+                        <td>
+                            <span class="status-badge status-{{ $record['status'] }}">
+                                {{ ucfirst($record['status']) }}
+                            </span>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach ($data['employees'] as $employee)
-                        @php
-                            $presentCount = 0;
-                            $lateCount = 0;
-                        @endphp
-                        <tr>
-                            <td class="employee-name name-col">{{ $employee['name'] }}</td>
-                            @foreach ($employee['events'] as $eventStatus)
-                                @php
-                                    $status = $eventStatus['status'];
-                                    $display = '';
-                                    $class = '';
-                                    if ($status === 'present') {
-                                        $display = 'P';
-                                        $class = 'status-present';
-                                        $presentCount++;
-                                        $grandTotalPresent++;
-                                    } elseif ($status === 'late') {
-                                        $display = 'L';
-                                        $class = 'status-late';
-                                        $lateCount++;
-                                        $grandTotalLate++;
-                                    } else {
-                                        $display = 'A';
-                                        $class = 'status-absent';
-                                    }
-                                @endphp
-                                <td class="event-col {{ $class }}">{{ $display }}</td>
-                            @endforeach
-                            <td class="summary summary-col">
-                                {{ $presentCount + $lateCount }}/{{ $eventCount }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endforeach
+                @endforeach
+            </tbody>
+        </table>
+    @else
+        <div class="empty">No records found for the selected filters.</div>
+    @endif
 
+    <!-- ===== FIXED FOOTER (bottom of every page) ===== -->
     <div class="footer">
-        <p>
-            <strong>Grand Totals:</strong>
-            P {{ $grandTotalPresent }} |
-            L {{ $grandTotalLate }} |
-            A {{ ($grandTotalEvents * count($report) * count($data['employees'])) - $grandTotalPresent - $grandTotalLate }}
-            <!-- simplified; we could compute properly but not necessary for clarity -->
-        </p>
-        <p>Generated by QR Attendance System</p>
+        <div class="office">OFFICIAL ATTENDANCE FORM • Human Resource Management Office (HRMO)</div>
+        <div class="statement">
+            This is the official HRMO attendance form used for LGU activities. As part of the LGU's
+            digitalization initiative, attendance is recorded through the Activity QR Code Attendance System.
+        </div>
     </div>
 </body>
-</html>0
+</html>

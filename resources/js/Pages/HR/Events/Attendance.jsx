@@ -20,6 +20,8 @@ import {
   Search,
   UserPlus,
   Pencil,
+  FileText,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export default function Attendance({
@@ -31,10 +33,15 @@ export default function Attendance({
   late,
   clusters,
   departments,
+  statuses,
+  filters,
   isPast,
   requiredEmployees,
 }) {
   const [activeTab, setActiveTab] = useState('present');
+  const [employmentStatusFilter, setEmploymentStatusFilter] = useState(
+    filters?.employment_status || ''
+  );
   const [clusterFilter, setClusterFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,6 +61,12 @@ export default function Attendance({
   const [editReason, setEditReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // PDF export modal state
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfAttendanceStatus, setPdfAttendanceStatus] = useState('all');
+  const [pdfEmploymentStatus, setPdfEmploymentStatus] = useState('all');
+  const [pdfIncludeEmploymentStatus, setPdfIncludeEmploymentStatus] = useState(true);
+
   // Filter departments by cluster
   const filteredDepartments = useMemo(() => {
     return departments.filter(
@@ -61,43 +74,67 @@ export default function Attendance({
     );
   }, [departments, clusterFilter]);
 
-
-  // ===== NEW: PDF status filter =====
-  const [pdfStatus, setPdfStatus] = useState('all');
-
   // Current list based on active tab
-  const currentList = activeTab === 'present' ? present : activeTab === 'late' ? late : absent;
+  const currentList =
+    activeTab === 'present' ? present : activeTab === 'late' ? late : absent;
 
   // Apply filters and search
   const filteredList = useMemo(() => {
     let list = currentList;
+
+    // Employment status filter
+    if (employmentStatusFilter) {
+      list = list.filter(
+        (item) => item.employment_status === employmentStatusFilter
+      );
+    }
+
+    // Cluster filter
     const selectedCluster = clusters.find((c) => c.id == clusterFilter);
     if (selectedCluster) {
       list = list.filter((item) => item.cluster === selectedCluster.name);
     }
+
+    // Department filter
     if (departmentFilter) {
       const selectedDept = departments.find((d) => d.id == departmentFilter);
       if (selectedDept) {
         list = list.filter((item) => item.department === selectedDept.name);
       }
     }
+
+    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       list = list.filter((item) =>
         item.employee_name.toLowerCase().includes(q)
       );
     }
+
     return list;
-  }, [currentList, clusterFilter, departmentFilter, searchQuery, clusters, departments]);
+  }, [
+    currentList,
+    employmentStatusFilter,
+    clusterFilter,
+    departmentFilter,
+    searchQuery,
+    clusters,
+    departments,
+  ]);
 
   // Helper to get attendance mode label
   const getModeLabel = (mode) => {
     switch (mode) {
-      case 'all_employees': return 'All Employees';
-      case 'selected_clusters': return 'Selected Clusters';
-      case 'selected_departments': return 'Selected Departments';
-      case 'selected_employees': return 'Selected Employees';
-      default: return mode;
+      case 'all_employees':
+        return 'All Employees';
+      case 'selected_clusters':
+        return 'Selected Clusters';
+      case 'selected_departments':
+        return 'Selected Departments';
+      case 'selected_employees':
+        return 'Selected Employees';
+      default:
+        return mode;
     }
   };
 
@@ -118,13 +155,23 @@ export default function Attendance({
       toast.error('No data to export.');
       return;
     }
-    const headers = ['Employee Name', 'Department', 'Cluster', 'Check-In Time', 'Status'];
+    const headers = [
+      'Employee Name',
+      'Department',
+      'Cluster',
+      'Employment Status',
+      'Check-In Time',
+      'Status',
+    ];
     const rows = list.map((item) => [
       item.employee_name,
       item.department,
       item.cluster,
+      item.employment_status || '',
       item.time_in ? formatTime(item.time_in) : '',
-      item.status === 'late' ? 'Late' : activeTab === 'absent' ? 'Absent' : 'Present',
+      item.status
+        ? item.status.charAt(0).toUpperCase() + item.status.slice(1)
+        : '',
     ]);
     const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -262,11 +309,39 @@ export default function Attendance({
   // Get status label
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'present': return 'Present';
-      case 'late': return 'Late';
-      case 'absent': return 'Absent';
-      default: return status || 'Unknown';
+      case 'present':
+        return 'Present';
+      case 'late':
+        return 'Late';
+      case 'absent':
+        return 'Absent';
+      default:
+        return status || 'Unknown';
     }
+  };
+
+  // Employment status badge color
+  const getEmploymentStatusBadge = (status) => {
+    switch (status) {
+      case 'Regular':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'Job Order (JO)':
+        return 'bg-amber-100 text-amber-800';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  // PDF download handler
+  const handlePdfDownload = () => {
+    const url = route('hr.events.attendance-pdf', {
+      event: event.id,
+      status: pdfAttendanceStatus,
+      employment_status: pdfEmploymentStatus,
+      include_employment_status: pdfIncludeEmploymentStatus ? 1 : 0,
+    });
+    window.location.href = url;
+    setShowPdfModal(false);
   };
 
   // ========== RENDER ==========
@@ -288,7 +363,9 @@ export default function Attendance({
               <h1 className="text-xl font-bold text-navy-800 sm:text-2xl lg:text-3xl">
                 {event.title}
               </h1>
-              <p className="text-xs text-gray-500 sm:text-sm">Attendance Details</p>
+              <p className="text-xs text-gray-500 sm:text-sm">
+                Attendance Details
+              </p>
             </div>
           </div>
 
@@ -385,6 +462,23 @@ export default function Attendance({
               </button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {/* Employment status filter */}
+              <div className="w-full sm:w-44">
+                <SelectInput
+                  value={employmentStatusFilter}
+                  onChange={(e) => setEmploymentStatusFilter(e.target.value)}
+                  className="block w-full text-sm"
+                >
+                  <option value="">All Employment Status</option>
+                  {(statuses || []).map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </SelectInput>
+              </div>
+
+              {/* Cluster filter */}
               <div className="w-full sm:w-36">
                 <SelectInput
                   value={clusterFilter}
@@ -402,6 +496,8 @@ export default function Attendance({
                   ))}
                 </SelectInput>
               </div>
+
+              {/* Department filter */}
               <div className="w-full sm:w-36">
                 <SelectInput
                   value={departmentFilter}
@@ -416,6 +512,8 @@ export default function Attendance({
                   ))}
                 </SelectInput>
               </div>
+
+              {/* Search */}
               <div className="relative flex-1 min-w-[140px] w-full sm:w-auto">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <TextInput
@@ -426,8 +524,10 @@ export default function Attendance({
                   className="block w-full rounded-md border-gray-300 pl-8 text-sm shadow-sm focus:border-navy-500 focus:ring-navy-500"
                 />
               </div>
+
               <button
                 onClick={() => {
+                  setEmploymentStatusFilter('');
                   setClusterFilter('');
                   setDepartmentFilter('');
                   setSearchQuery('');
@@ -454,13 +554,28 @@ export default function Attendance({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-medium text-navy-800">{item.employee_name}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-navy-800">
+                          {item.employee_name}
+                        </p>
+                        {item.employment_status && (
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${getEmploymentStatusBadge(
+                              item.employment_status
+                            )}`}
+                          >
+                            {item.employment_status}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500">{item.department}</p>
                       <p className="text-xs text-gray-400">{item.cluster}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(item.status)}`}
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(
+                          item.status
+                        )}`}
                       >
                         {getStatusLabel(item.status)}
                       </span>
@@ -492,7 +607,9 @@ export default function Attendance({
               {filteredList.length === 0 ? (
                 <div className="p-6 text-center text-gray-500 sm:p-8">
                   <Users className="mx-auto h-10 w-10 text-gray-300" />
-                  <p className="mt-2 text-sm">No {activeTab} employees found.</p>
+                  <p className="mt-2 text-sm">
+                    No {activeTab} employees found.
+                  </p>
                 </div>
               ) : (
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -507,8 +624,13 @@ export default function Attendance({
                       <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 md:table-cell md:px-4 md:py-3">
                         Cluster
                       </th>
+                      <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 lg:table-cell lg:px-4 lg:py-3">
+                        Employment
+                      </th>
                       <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4 sm:py-3">
-                        {activeTab === 'present' || activeTab === 'late' ? 'Check‑In' : 'Status'}
+                        {activeTab === 'present' || activeTab === 'late'
+                          ? 'Check‑In'
+                          : 'Status'}
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 sm:px-4 sm:py-3">
                         Status
@@ -530,6 +652,19 @@ export default function Attendance({
                         <td className="hidden px-3 py-3 text-sm text-gray-500 md:table-cell md:px-4 md:py-4">
                           {item.cluster}
                         </td>
+                        <td className="hidden px-3 py-3 text-sm lg:table-cell lg:px-4 lg:py-4">
+                          {item.employment_status ? (
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getEmploymentStatusBadge(
+                                item.employment_status
+                              )}`}
+                            >
+                              {item.employment_status}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
                         <td className="px-3 py-3 text-sm text-gray-500 sm:px-4 sm:py-4">
                           {activeTab === 'present' || activeTab === 'late'
                             ? formatTime(item.time_in)
@@ -537,7 +672,9 @@ export default function Attendance({
                         </td>
                         <td className="px-3 py-3 text-sm sm:px-4 sm:py-4">
                           <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(item.status)}`}
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(
+                              item.status
+                            )}`}
                           >
                             {getStatusLabel(item.status)}
                           </span>
@@ -563,68 +700,92 @@ export default function Attendance({
             </div>
           </div>
 
-          {/* Export & Manual Attendance Buttons */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              onClick={exportPresent}
-              className="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-xs text-white hover:bg-green-700 sm:px-4 sm:py-2 sm:text-sm"
-            >
-              <Download className="mr-1 h-4 w-4" />
-              Present
-            </button>
-            <button
-              onClick={exportLate}
-              className="inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-xs text-white hover:bg-yellow-700 sm:px-4 sm:py-2 sm:text-sm"
-            >
-              <Download className="mr-1 h-4 w-4" />
-              Late
-            </button>
-            <button
-              onClick={exportAbsent}
-              className="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 sm:px-4 sm:py-2 sm:text-sm"
-            >
-              <Download className="mr-1 h-4 w-4" />
-              Absent
-            </button>
-            <button
-              onClick={exportAll}
-              className="inline-flex items-center rounded-md bg-navy-700 px-3 py-2 text-xs text-white hover:bg-navy-800 sm:px-4 sm:py-2 sm:text-sm"
-            >
-              <Download className="mr-1 h-4 w-4" />
-              All
-            </button>
-            <button
-              onClick={() => setShowManualModal(true)}
-              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-xs text-white hover:bg-indigo-700 sm:px-4 sm:py-2 sm:text-sm"
-            >
-              <UserPlus className="mr-1 h-4 w-4" />
-              Manual
-            </button>
-             {/* PDF Export */}
-  <select
-    value={pdfStatus}
-    onChange={(e) => setPdfStatus(e.target.value)}
-    className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-navy-500 focus:ring-navy-500"
-  >
-    <option value="all">All</option>
-    <option value="present">Present</option>
-    <option value="late">Late</option>
-    <option value="absent">Absent</option>
-  </select>
-  <button
-    onClick={() => {
-      const url = route('hr.events.attendance-pdf', {
-        event: event.id,
-        status: pdfStatus,
-      });
-      window.location.href = url;
-    }}
-    className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
-  >
-    <Download className="mr-1 h-4 w-4" />
-    PDF
-  </button>
+          {/* ===== Export & Manual Attendance Section ===== */}
+          <div className="mt-6 space-y-4">
+            {/* Excel / CSV Exports */}
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-green-700" />
+                <h3 className="text-sm font-semibold text-navy-800">
+                  Export as Excel (CSV)
+                </h3>
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-800">
+                  .csv
+                </span>
+              </div>
 
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={exportPresent}
+                  className="inline-flex items-center rounded-md border border-green-600 bg-white px-3 py-2 text-xs font-medium text-green-700 hover:bg-green-50 sm:px-4 sm:py-2 sm:text-sm"
+                >
+                  <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                  Present
+                </button>
+                <button
+                  onClick={exportLate}
+                  className="inline-flex items-center rounded-md border border-yellow-600 bg-white px-3 py-2 text-xs font-medium text-yellow-700 hover:bg-yellow-50 sm:px-4 sm:py-2 sm:text-sm"
+                >
+                  <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                  Late
+                </button>
+                <button
+                  onClick={exportAbsent}
+                  className="inline-flex items-center rounded-md border border-red-600 bg-white px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 sm:px-4 sm:py-2 sm:text-sm"
+                >
+                  <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                  Absent
+                </button>
+                <button
+                  onClick={exportAll}
+                  className="inline-flex items-center rounded-md border border-navy-700 bg-white px-3 py-2 text-xs font-medium text-navy-800 hover:bg-navy-50 sm:px-4 sm:py-2 sm:text-sm"
+                >
+                  <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                  All Records
+                </button>
+              </div>
+            </div>
+
+            {/* PDF Export */}
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-red-700" />
+                <h3 className="text-sm font-semibold text-navy-800">
+                  Export as PDF
+                </h3>
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
+                  .pdf
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowPdfModal(true)}
+                  className="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700 sm:px-4 sm:py-2 sm:text-sm"
+                >
+                  <FileText className="mr-1.5 h-4 w-4" />
+                  Download PDF
+                </button>
+              </div>
+            </div>
+
+            {/* Manual Attendance */}
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-indigo-700" />
+                <h3 className="text-sm font-semibold text-navy-800">
+                  Manual Attendance
+                </h3>
+              </div>
+
+              <button
+                onClick={() => setShowManualModal(true)}
+                className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700 sm:px-4 sm:py-2 sm:text-sm"
+              >
+                <UserPlus className="mr-1.5 h-4 w-4" />
+                Record Manually
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -634,13 +795,17 @@ export default function Attendance({
       {showManualModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-navy-800">Manual Attendance</h3>
+            <h3 className="text-lg font-semibold text-navy-800">
+              Manual Attendance
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               Record attendance for an employee without scanning.
             </p>
 
             <div className="mt-4">
-              <label className="text-sm font-medium text-gray-700">Search Employee</label>
+              <label className="text-sm font-medium text-gray-700">
+                Search Employee
+              </label>
               <input
                 type="text"
                 value={empSearch}
@@ -656,7 +821,9 @@ export default function Attendance({
             {empSearch && (
               <div className="mt-2 max-h-40 overflow-y-auto rounded border border-gray-200">
                 {filteredEmployees.length === 0 ? (
-                  <p className="p-2 text-sm text-gray-500">No employees found.</p>
+                  <p className="p-2 text-sm text-gray-500">
+                    No employees found.
+                  </p>
                 ) : (
                   filteredEmployees.map((emp) => (
                     <div
@@ -669,7 +836,9 @@ export default function Attendance({
                         selectedEmployee?.id === emp.id ? 'bg-navy-50' : ''
                       }`}
                     >
-                      <p className="text-sm font-medium text-navy-800">{emp.name}</p>
+                      <p className="text-sm font-medium text-navy-800">
+                        {emp.name}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {emp.department} · {emp.cluster}
                       </p>
@@ -681,7 +850,9 @@ export default function Attendance({
 
             {selectedEmployee && (
               <div className="mt-3 rounded-md bg-gray-50 p-3">
-                <p className="text-sm font-medium text-navy-800">{selectedEmployee.name}</p>
+                <p className="text-sm font-medium text-navy-800">
+                  {selectedEmployee.name}
+                </p>
                 <p className="text-xs text-gray-500">
                   {selectedEmployee.department} · {selectedEmployee.cluster}
                 </p>
@@ -699,16 +870,22 @@ export default function Attendance({
               >
                 <option value="">Select a reason...</option>
                 <option value="QR Code Damaged">QR Code Damaged</option>
-                <option value="QR Code Not Readable">QR Code Not Readable</option>
+                <option value="QR Code Not Readable">
+                  QR Code Not Readable
+                </option>
                 <option value="Scanner Issue">Scanner Issue</option>
                 <option value="Device Problem">Device Problem</option>
-                <option value="Administrative Approval">Administrative Approval</option>
+                <option value="Administrative Approval">
+                  Administrative Approval
+                </option>
                 <option value="Other">Other</option>
               </select>
             </div>
 
             <div className="mt-4">
-              <label className="text-sm font-medium text-gray-700">Check‑In Time</label>
+              <label className="text-sm font-medium text-gray-700">
+                Check‑In Time
+              </label>
               <input
                 type="datetime-local"
                 value={manualTime}
@@ -743,17 +920,24 @@ export default function Attendance({
       {showStatusModal && editingAttendance && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-navy-800">Edit Attendance Status</h3>
+            <h3 className="text-lg font-semibold text-navy-800">
+              Edit Attendance Status
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Update the attendance status for {editingAttendance.employee_name}.
+              Update the attendance status for{' '}
+              {editingAttendance.employee_name}.
             </p>
 
             <div className="mt-4 space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Current Status</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Current Status
+                </label>
                 <div className="mt-1">
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(editingAttendance.status)}`}
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(
+                      editingAttendance.status
+                    )}`}
                   >
                     {getStatusLabel(editingAttendance.status)}
                   </span>
@@ -761,9 +945,13 @@ export default function Attendance({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Check‑In Time</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Check‑In Time
+                </label>
                 <p className="mt-1 text-sm text-gray-500">
-                  {editingAttendance.time_in ? formatTime(editingAttendance.time_in) : '—'}
+                  {editingAttendance.time_in
+                    ? formatTime(editingAttendance.time_in)
+                    : '—'}
                 </p>
               </div>
 
@@ -812,6 +1000,123 @@ export default function Attendance({
                 className="rounded-md bg-navy-700 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800 disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Update'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== PDF Export Modal ===== */}
+      {showPdfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-red-600" />
+              <h3 className="text-lg font-semibold text-navy-800">
+                Export Attendance PDF
+              </h3>
+            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              Choose the filters below. Only records matching your selection
+              will be included in the PDF.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {/* Attendance Status */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Attendance Status
+                </label>
+                <select
+                  value={pdfAttendanceStatus}
+                  onChange={(e) => setPdfAttendanceStatus(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+                >
+                  <option value="all">All</option>
+                  <option value="present">Present</option>
+                  <option value="late">Late</option>
+                  <option value="absent">Absent</option>
+                </select>
+              </div>
+
+              {/* Employment Status */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Employment Status
+                </label>
+                <select
+                  value={pdfEmploymentStatus}
+                  onChange={(e) => setPdfEmploymentStatus(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-navy-500 focus:ring-navy-500"
+                >
+                  <option value="all">All</option>
+                  <option value="Regular">Regular</option>
+                  <option value="Job Order (JO)">Job Order (JO)</option>
+                </select>
+              </div>
+
+              {/* Include Employment Status column toggle */}
+              <div className="flex items-start gap-3 rounded-md border border-gray-200 p-3">
+                <input
+                  id="include_employment_status"
+                  type="checkbox"
+                  checked={pdfIncludeEmploymentStatus}
+                  onChange={(e) =>
+                    setPdfIncludeEmploymentStatus(e.target.checked)
+                  }
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-navy-600 focus:ring-navy-500"
+                />
+                <label
+                  htmlFor="include_employment_status"
+                  className="flex-1 text-sm text-gray-700 cursor-pointer"
+                >
+                  <span className="font-medium">
+                    Include Employment Status column
+                  </span>
+                  <span className="block text-xs text-gray-500 mt-0.5">
+                    When unchecked, the Employment Status column is hidden
+                    from the PDF. The filter above still applies to which
+                    employees are included.
+                  </span>
+                </label>
+              </div>
+
+              {/* Live preview */}
+              <div className="rounded-md bg-gray-50 p-3 text-xs text-gray-600">
+                <span className="font-medium text-gray-700">Preview:</span>{' '}
+                {pdfAttendanceStatus === 'all'
+                  ? 'All attendance statuses'
+                  : pdfAttendanceStatus.charAt(0).toUpperCase() +
+                    pdfAttendanceStatus.slice(1)}
+                {' • '}
+                {pdfEmploymentStatus === 'all'
+                  ? 'All employment statuses'
+                  : pdfEmploymentStatus}
+                {' • '}
+                {pdfIncludeEmploymentStatus
+                  ? 'Show Employment Status column'
+                  : 'Hide Employment Status column'}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowPdfModal(false);
+                  setPdfAttendanceStatus('all');
+                  setPdfEmploymentStatus('all');
+                  setPdfIncludeEmploymentStatus(true);
+                }}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePdfDownload}
+                className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                <Download className="mr-1 h-4 w-4" />
+                Download PDF
               </button>
             </div>
           </div>

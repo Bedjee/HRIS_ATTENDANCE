@@ -205,12 +205,24 @@ public function required(Event $event)
 /**
      * Attendance Details page – final outcome (Present / Absent) with manual attendance support.
      */
- public function attendance(Event $event)
+ public function attendance(Request $request, Event $event)
 {
-    // Get all employees required for this event
+    // Get employment status filter from request
+    $employmentStatusFilter = $request->input('employment_status', '');
+
+    // Get all employees required for this event, sorted by department then last name
     $requiredEmployees = $event->requiredEmployees()
         ->with(['department.cluster', 'user'])
-        ->get();
+        ->when($employmentStatusFilter, function ($q) use ($employmentStatusFilter) {
+            $q->where('employment_status', $employmentStatusFilter);
+        })
+        ->get()
+        ->sortBy(function ($emp) {
+            $dept = strtolower($emp->department?->name ?? 'zzzz'); // unassigned goes last
+            $name = strtolower($emp->last_name . ' ' . $emp->first_name);
+            return $dept . '|' . $name;
+        })
+        ->values();
 
     // Map employee_id => time_in from already recorded attendance
     $presentRecords = Attendance::where('event_id', $event->id)
@@ -220,60 +232,57 @@ public function required(Event $event)
     $isPast = $eventDate->isPast();
 
     $present = collect();
-    $absent = collect();
-    $late = collect();
+    $absent  = collect();
+    $late    = collect();
 
     foreach ($requiredEmployees as $emp) {
         $attTime = $presentRecords->get($emp->id);
 
         if ($attTime) {
-            // Fetch the actual attendance record to get its ID and status
             $attendance = Attendance::where('employee_id', $emp->id)
                 ->where('event_id', $event->id)
                 ->first();
 
-            $status = $attendance->status; // 'present', 'late', or 'absent'
+            $status = $attendance->status;
 
-            // Common data
             $attData = [
-                'id' => $attendance->id,
-                'employee_name' => $emp->full_name,
-                'department' => $emp->department?->name ?? 'Unassigned',
-                'cluster' => $emp->department?->cluster?->name ?? '—',
-                'time_in' => $attTime,
-                'status' => $status,
+                'id'                => $attendance->id,
+                'employee_name'     => $emp->full_name,
+                'department'        => $emp->department?->name ?? 'Unassigned',
+                'cluster'           => $emp->department?->cluster?->name ?? '—',
+                'employment_status' => $emp->employment_status,   // ← NEW
+                'time_in'           => $attTime,
+                'status'            => $status,
             ];
 
-            // Categorize based on the actual status
             if ($status === 'late') {
                 $late->push($attData);
             } elseif ($status === 'absent') {
                 $absent->push($attData);
             } else {
-                // 'present' or any other status (treat as present)
                 $present->push($attData);
             }
         } elseif ($isPast) {
-            // No attendance record yet and event is past → mark as absent
             $absent->push([
-                'id' => null,
-                'employee_id' => $emp->id,
-                'employee_name' => $emp->full_name,
-                'department' => $emp->department?->name ?? 'Unassigned',
-                'cluster' => $emp->department?->cluster?->name ?? '—',
-                'status' => 'absent',
+                'id'                => null,
+                'employee_id'       => $emp->id,
+                'employee_name'     => $emp->full_name,
+                'department'        => $emp->department?->name ?? 'Unassigned',
+                'cluster'           => $emp->department?->cluster?->name ?? '—',
+                'employment_status' => $emp->employment_status,   // ← NEW
+                'status'            => 'absent',
             ]);
         }
-        // If event is not past and no record, the employee is not yet categorized
     }
 
-    // Build required employees list for manual attendance modal
+    // Required employees list for manual attendance modal (also sorted + includes status)
     $requiredEmployeesList = $requiredEmployees->map(function ($emp) {
         return [
-            'id' => $emp->id,
-            'name' => $emp->full_name,
-            'department' => $emp->department?->name ?? 'Unassigned',
-            'cluster' => $emp->department?->cluster?->name ?? '—',
+            'id'                => $emp->id,
+            'name'              => $emp->full_name,
+            'department'        => $emp->department?->name ?? 'Unassigned',
+            'cluster'           => $emp->department?->cluster?->name ?? '—',
+            'employment_status' => $emp->employment_status,        // ← NEW
         ];
     })->values();
 
@@ -282,103 +291,127 @@ public function required(Event $event)
 
     return Inertia::render('HR/Events/Attendance', [
         'event' => [
-            'id' => $event->id,
-            'title' => $event->title,
-            'date' => $event->date,
-            'time' => $event->time,
-            'venue' => $event->venue,
+            'id'              => $event->id,
+            'title'           => $event->title,
+            'date'            => $event->date,
+            'time'            => $event->time,
+            'venue'           => $event->venue,
             'attendance_mode' => $event->attendance_mode,
-            'grace_period' => $event->grace_period,
+            'grace_period'    => $event->grace_period,
         ],
         'summary' => [
             'total_required' => $requiredEmployees->count(),
-            'total_present' => $present->count(),
-            'total_absent' => $absent->count(),
-            'total_late' => $late->count(),
+            'total_present'  => $present->count(),
+            'total_absent'   => $absent->count(),
+            'total_late'     => $late->count(),
         ],
-        'present' => $present->values(),
-        'absent' => $absent->values(),
-        'late' => $late->values(),
+        'present'           => $present->values(),
+        'absent'            => $absent->values(),
+        'late'              => $late->values(),
         'requiredEmployees' => $requiredEmployeesList,
-        'clusters' => $clusters,
-        'departments' => $departments,
+        'clusters'          => $clusters,
+        'departments'       => $departments,
+        'statuses'          => Employee::getStatuses(),            // ← NEW
+        'filters' => [                                             // ← NEW
+            'employment_status' => $employmentStatusFilter,
+        ],
         'isPast' => $isPast,
     ]);
 }
 
 
  // ===== NEW PDF METHOD =====
-    public function attendancePdf(Request $request, Event $event)
-    {
-        $status = $request->input('status', 'all');
-        $allowed = ['present', 'absent', 'late', 'all'];
-        if (!in_array($status, $allowed)) {
-            $status = 'all';
+   // ===== PDF METHOD =====
+public function attendancePdf(Request $request, Event $event)
+{
+    $status = $request->input('status', 'all');
+    $allowed = ['present', 'absent', 'late', 'all'];
+    if (!in_array($status, $allowed)) {
+        $status = 'all';
+    }
+
+    $employmentStatus = $request->input('employment_status', 'all');
+    $allowedEmployment = ['all', Employee::STATUS_REGULAR, Employee::STATUS_JOB_ORDER];
+    if (!in_array($employmentStatus, $allowedEmployment)) {
+        $employmentStatus = 'all';
+    }
+
+    // ← NEW: whether to show the Employment Status column in the PDF
+    $includeEmploymentStatus = $request->boolean('include_employment_status', true);
+
+    $requiredEmployeesQuery = $event->requiredEmployees()
+        ->with(['department.cluster', 'user']);
+
+    if ($employmentStatus !== 'all') {
+        $requiredEmployeesQuery->where('employment_status', $employmentStatus);
+    }
+
+    $requiredEmployees = $requiredEmployeesQuery->get();
+
+    $presentRecords = Attendance::where('event_id', $event->id)
+        ->pluck('time_in', 'employee_id');
+
+    $eventDate = Carbon::parse($event->date . ' ' . $event->time);
+    $isPast = $eventDate->isPast();
+
+    $attendanceData = [];
+
+    foreach ($requiredEmployees as $emp) {
+        $attTime = $presentRecords->get($emp->id);
+        $attStatus = null;
+
+        if ($attTime) {
+            $attendance = Attendance::where('employee_id', $emp->id)
+                ->where('event_id', $event->id)
+                ->first();
+            $attStatus = $attendance->status;
+        } elseif ($isPast) {
+            $attStatus = 'absent';
+        } else {
+            continue;
         }
 
-        $requiredEmployees = $event->requiredEmployees()
-            ->with(['department.cluster', 'user'])
-            ->get();
-
-        $presentRecords = Attendance::where('event_id', $event->id)
-            ->pluck('time_in', 'employee_id');
-
-        $eventDate = Carbon::parse($event->date . ' ' . $event->time);
-        $isPast = $eventDate->isPast();
-
-        $attendanceData = [];
-
-        foreach ($requiredEmployees as $emp) {
-            $attTime = $presentRecords->get($emp->id);
-            $attStatus = null;
-
-            if ($attTime) {
-                $attendance = Attendance::where('employee_id', $emp->id)
-                    ->where('event_id', $event->id)
-                    ->first();
-                $attStatus = $attendance->status;
-            } elseif ($isPast) {
-                $attStatus = 'absent';
-            } else {
-                // Not recorded and event not past – skip
-                continue;
-            }
-
-            if ($status !== 'all' && $attStatus !== $status) {
-                continue;
-            }
-
-
-
-            $attendanceData[] = [
-                'employee_name' => $emp->full_name,
-                'department'    => $emp->department?->name ?? 'Unassigned',
-                'cluster'       => $emp->department?->cluster?->name ?? '—',
-                'status'        => $attStatus,
-                'time_in' => $attTime ? Carbon::parse($attTime)->format('g:i A') : '—',
-            ];
+        if ($status !== 'all' && $attStatus !== $status) {
+            continue;
         }
 
-        usort($attendanceData, fn($a, $b) => strcmp($a['employee_name'], $b['employee_name']));
+        $attendanceData[] = [
+            'employee_name'     => $emp->full_name,
+            'department'        => $emp->department?->name ?? 'Unassigned',
+            'cluster'           => $emp->department?->cluster?->name ?? '—',
+            'employment_status' => $emp->employment_status ?? '—',
+            'status'            => $attStatus,
+            'time_in'           => $attTime ? Carbon::parse($attTime)->format('g:i A') : '—',
+        ];
+    }
 
-        // Define logo paths (adjust as needed)
-    $logoLeft = public_path('images/logoLeft.png');
+    // Sort by department, then name
+    usort($attendanceData, function ($a, $b) {
+        $dept = strcmp($a['department'], $b['department']);
+        if ($dept !== 0) return $dept;
+        return strcasecmp($a['employee_name'], $b['employee_name']);
+    });
+
+    $logoLeft  = public_path('images/logoLeft.png');
     $logoRight = public_path('images/logoRight.png');
 
     $pdf = Pdf::loadView('pdf.attendance', [
-        'event'           => $event,
-        'attendanceData'  => $attendanceData,
-        'status'          => $status,
-        'generated_at'    => now(),
-        'logoLeft'        => $logoLeft,
-        'logoRight'       => $logoRight,
+        'event'                     => $event,
+        'attendanceData'            => $attendanceData,
+        'status'                    => $status,
+        'employmentStatus'          => $employmentStatus,
+        'includeEmploymentStatus'   => $includeEmploymentStatus,  // ← pass to blade
+        'generated_at'              => now(),
+        'logoLeft'                  => $logoLeft,
+        'logoRight'                 => $logoRight,
     ]);
 
-    $filename = "attendance_{$event->title}_{$event->date}_{$status}.pdf";
+    $statusLabel = $status === 'all' ? 'all' : $status;
+    $empLabel = $employmentStatus === 'all' ? 'all' : str_replace(' ', '_', $employmentStatus);
+    $filename = "attendance_{$event->title}_{$event->date}_{$statusLabel}_{$empLabel}.pdf";
+
     return $pdf->download($filename);
 }
-
-
 
 
 }

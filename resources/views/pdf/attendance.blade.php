@@ -7,7 +7,7 @@
         /* ---- Global & Page Setup ---- */
         body {
             margin: 20px;
-            margin-bottom: 85px;   /* space for fixed footer */
+            margin-bottom: 85px;
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 12px;
             padding: 0;
@@ -19,33 +19,12 @@
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .header-table td {
-            vertical-align: middle;
-            padding: 0;
-            border: none;
-        }
-        .header-logo-left {
-            width: 100px;
-            text-align: center;
-        }
-        .header-logo-left img {
-            max-height: 60px;
-            max-width: 80px;
-            vertical-align: middle;
-        }
-        .header-logo-right {
-            width: 140px;
-            text-align: center;
-        }
-        .header-logo-right img {
-            max-height: 80px;
-            max-width: 120px;
-            vertical-align: middle;
-        }
+        .header-table { width: 100%; border-collapse: collapse; }
+        .header-table td { vertical-align: middle; padding: 0; border: none; }
+        .header-logo-left { width: 100px; text-align: center; }
+        .header-logo-left img { max-height: 60px; max-width: 80px; vertical-align: middle; }
+        .header-logo-right { width: 140px; text-align: center; }
+        .header-logo-right img { max-height: 80px; max-width: 120px; vertical-align: middle; }
         .header-title {
             text-align: center;
             font-size: 28px;
@@ -55,28 +34,11 @@
             text-transform: uppercase;
         }
         /* ---- Event Details ---- */
-        .event-details {
-            margin-bottom: 20px;
-        }
-        .event-details table {
-            border-collapse: collapse;
-            font-size: 13px;
-            width: auto;
-        }
-        .event-details td {
-            padding: 2px 10px 2px 0;
-            border: none;
-        }
-        .event-details .label {
-            font-weight: bold;
-            color: #1e293b;
-            width: 100px;
-            vertical-align: top;
-        }
-        .event-details .value {
-            color: #1e293b;
-            vertical-align: top;
-        }
+        .event-details { margin-bottom: 20px; }
+        .event-details table { border-collapse: collapse; font-size: 13px; width: auto; }
+        .event-details td { padding: 2px 10px 2px 0; border: none; }
+        .event-details .label { font-weight: bold; color: #1e293b; width: 100px; vertical-align: top; }
+        .event-details .value { color: #1e293b; vertical-align: top; }
         /* ---- Status filter ---- */
         .status-filter {
             text-align: right;
@@ -84,62 +46,52 @@
             color: #64748b;
             margin-bottom: 5px;
         }
+        .status-filter strong { color: #1e3a5f; }
         /* ---- Attendance Table ---- */
         table.attendance {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
-            font-size: 12px;
+            font-size: 11px;
         }
         table.attendance th {
             background: #1e3a5f;
             color: #ffffff;
             font-weight: 600;
-            padding: 10px 8px;
+            padding: 8px 6px;
             text-align: left;
             border: 1px solid #1e3a5f;
         }
         table.attendance td {
-            padding: 8px;
+            padding: 7px 6px;
             border: 1px solid #e2e8f0;
             color: #1e293b;
         }
-        table.attendance tr:nth-child(even) {
-            background: #f8fafc;
-        }
+        table.attendance tr:nth-child(even) { background: #f8fafc; }
         .status-badge {
             display: inline-block;
-            padding: 2px 12px;
+            padding: 2px 10px;
             border-radius: 12px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: capitalize;
         }
-        .status-present {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .status-late {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-        .status-absent {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        /* ---- Empty state ---- */
-        .empty {
-            text-align: center;
-            padding: 40px 0;
-            color: #94a3b8;
-            font-size: 14px;
-        }
-        /* ---- Fallback for missing logos ---- */
-        .no-logo {
+        .status-present { background: #dcfce7; color: #166534; }
+        .status-late    { background: #fef9c3; color: #854d0e; }
+        .status-absent  { background: #fee2e2; color: #991b1b; }
+        .emp-badge {
             display: inline-block;
-            width: 80px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
         }
-        /* ---- FIXED FOOTER (appears on every page) ---- */
+        .emp-regular { background: #e0e7ff; color: #3730a3; }
+        .emp-jo      { background: #fef3c7; color: #92400e; }
+        /* ---- Empty state ---- */
+        .empty { text-align: center; padding: 40px 0; color: #94a3b8; font-size: 14px; }
+        .no-logo { display: inline-block; width: 80px; }
+        /* ---- FIXED FOOTER ---- */
         .footer {
             position: fixed;
             bottom: 0;
@@ -159,19 +111,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .footer .statement {
-            font-style: italic;
-            margin-top: 1px;
-        }
-        .footer .generated {
-            font-size: 8px;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
-        /* ---- Optional generation info (moved to footer) ---- */
-        .footer .generated span {
-            font-weight: 600;
-        }
+        .footer .statement { font-style: italic; margin-top: 1px; }
     </style>
 </head>
 <body>
@@ -216,9 +156,13 @@
         </table>
     </div>
 
-    <!-- ===== STATUS FILTER ===== -->
+    <!-- ===== FILTER SUMMARY ===== -->
     <div class="status-filter">
-        Showing: <strong>{{ ucfirst($status) }}</strong> records
+        Showing:
+        <strong>{{ $status === 'all' ? 'All Attendance' : ucfirst($status) }}</strong>
+        @if(!empty($employmentStatus) && $employmentStatus !== 'all')
+            &nbsp;•&nbsp; Employment: <strong>{{ $employmentStatus }}</strong>
+        @endif
     </div>
 
     <!-- ===== ATTENDANCE TABLE ===== -->
@@ -226,10 +170,16 @@
         <table class="attendance">
             <thead>
                 <tr>
-                    <th style="width: 40px; text-align: center;">#</th>
+                    <th style="width: 35px; text-align: center;">#</th>
                     <th style="text-align: left;">Employee Name</th>
                     <th style="text-align: left;">Department</th>
                     <th style="text-align: left;">Cluster</th>
+
+                    {{-- Conditional Employment Status column --}}
+                    @if($includeEmploymentStatus)
+                        <th style="text-align: left;">Employment Status</th>
+                    @endif
+
                     <th style="text-align: left;">Check‑In</th>
                     <th style="text-align: left;">Status</th>
                 </tr>
@@ -241,6 +191,24 @@
                         <td>{{ $record['employee_name'] }}</td>
                         <td>{{ $record['department'] }}</td>
                         <td>{{ $record['cluster'] }}</td>
+
+                        {{-- Conditional Employment Status cell --}}
+                        @if($includeEmploymentStatus)
+                            <td>
+                                @php
+                                    $emp = $record['employment_status'] ?? '—';
+                                    $empClass = str_contains($emp, 'Job')
+                                        ? 'emp-jo'
+                                        : (str_contains($emp, 'Regular') ? 'emp-regular' : '');
+                                @endphp
+                                @if($empClass)
+                                    <span class="emp-badge {{ $empClass }}">{{ $emp }}</span>
+                                @else
+                                    {{ $emp }}
+                                @endif
+                            </td>
+                        @endif
+
                         <td>{{ $record['time_in'] }}</td>
                         <td>
                             <span class="status-badge status-{{ $record['status'] }}">
@@ -252,17 +220,16 @@
             </tbody>
         </table>
     @else
-        <div class="empty">No records found for the selected status.</div>
+        <div class="empty">No records found for the selected filters.</div>
     @endif
 
-    <!-- ===== FIXED FOOTER (bottom of every page) ===== -->
+    <!-- ===== FIXED FOOTER ===== -->
     <div class="footer">
         <div class="office">OFFICIAL ATTENDANCE FORM • Human Resource Management Office (HRMO)</div>
         <div class="statement">
-            This is the official HRMO attendance form used for LGU  activities. As part of the LGU's
+            This is the official HRMO attendance form used for LGU activities. As part of the LGU's
             digitalization initiative, attendance is recorded through the Activity QR Code Attendance System.
         </div>
-
     </div>
 </body>
 </html>
