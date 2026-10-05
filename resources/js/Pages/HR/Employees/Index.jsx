@@ -263,26 +263,45 @@ export default function Index({ auth, employees, clusters, departments, filters 
               )}
             </div>
 
-            {/* Pagination */}
-            {employees.links && employees.data.length > 0 && (
-              <div className="border-t border-gray-200 px-3 py-3 sm:px-4 sm:py-4">
-                <div className="flex flex-wrap items-center justify-center gap-1">
-                  {employees.links.map((link, index) => (
-                    <Link
-                      key={index}
-                      href={link.url || '#'}
-                      className={`inline-flex items-center rounded-md px-2 py-1 text-sm sm:px-3 sm:py-1.5 ${
-                        link.active
-                          ? 'bg-navy-700 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
-                      dangerouslySetInnerHTML={{ __html: link.label }}
-                      disabled={!link.url}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+         {/* Pagination */}
+{employees.links && employees.data.length > 0 && (
+  <div className="border-t border-gray-200 px-3 py-3 sm:px-4 sm:py-4">
+    <div className="flex flex-wrap items-center justify-center gap-1">
+      {employees.links.map((link, index) => {
+        let href = link.url || '#';
+
+        if (link.url && link.url !== '#') {
+          const url = new URL(link.url, window.location.origin);
+
+          if (search) url.searchParams.set('search', search);
+          else url.searchParams.delete('search');
+
+          if (clusterFilter) url.searchParams.set('cluster_id', clusterFilter);
+          else url.searchParams.delete('cluster_id');
+
+          if (departmentFilter) url.searchParams.set('department_id', departmentFilter);
+          else url.searchParams.delete('department_id');
+
+          href = url.pathname + '?' + url.searchParams.toString();
+        }
+
+        return (
+          <Link
+            key={index}
+            href={href}
+            className={`inline-flex items-center rounded-md px-2 py-1 text-sm sm:px-3 sm:py-1.5 ${
+              link.active
+                ? 'bg-navy-700 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            } ${!link.url ? 'cursor-not-allowed opacity-50' : ''}`}
+            dangerouslySetInnerHTML={{ __html: link.label }}
+            disabled={!link.url}
+          />
+        );
+      })}
+    </div>
+  </div>
+)}
           </div>
         </div>
       </div>

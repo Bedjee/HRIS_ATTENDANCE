@@ -181,6 +181,8 @@ Route::get('/analytics', [AnalyticsController::class, 'index'])->name('hr.analyt
 Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('hr.users.reset-password');
 
 
+
+
 });
 
 

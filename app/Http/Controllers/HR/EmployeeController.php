@@ -24,57 +24,57 @@ class EmployeeController extends Controller
      * Display a listing of employees with search.
      */
     public function index(Request $request)
-    {
-        $search = $request->input('search', '');
-        $clusterId = $request->input('cluster_id');
-        $departmentId = $request->input('department_id');
-        $statusFilter = $request->input('employment_status'); // new
+{
+    $search = $request->input('search', '');
+    $clusterId = $request->input('cluster_id');
+    $departmentId = $request->input('department_id');
+    $statusFilter = $request->input('employment_status');
 
-        $employees = Employee::with(['user', 'department.cluster'])
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhereHas('user', function ($uq) use ($search) {
-                          $uq->where('username', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('department', function ($dq) use ($search) {
-                          $dq->where('name', 'like', "%{$search}%");
-                      });
-                });
-            })
-            ->when($clusterId, function ($query) use ($clusterId) {
-                $query->whereHas('department', function ($q) use ($clusterId) {
-                    $q->where('cluster_id', $clusterId);
-                });
-            })
-            ->when($departmentId, function ($query) use ($departmentId) {
-                $query->where('department_id', $departmentId);
-            })
-            ->when($statusFilter, function ($query) use ($statusFilter) {
-                $query->where('employment_status', $statusFilter);
-            })
-            ->orderBy('last_name')
-            ->paginate(10);
+    $employees = Employee::with(['user', 'department.cluster'])
+        ->when($search, function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('username', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('department', function ($dq) use ($search) {
+                      $dq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        })
+        ->when($clusterId, function ($query) use ($clusterId) {
+            $query->whereHas('department', function ($q) use ($clusterId) {
+                $q->where('cluster_id', $clusterId);
+            });
+        })
+        ->when($departmentId, function ($query) use ($departmentId) {
+            $query->where('department_id', $departmentId);
+        })
+        ->when($statusFilter, function ($query) use ($statusFilter) {
+            $query->where('employment_status', $statusFilter);
+        })
+        ->orderBy('last_name')
+        ->paginate(10)
+        ->withQueryString();   // ✅ ADD THIS LINE — keeps filters on pagination
 
-        $clusters = Cluster::select('id', 'name')->get();
-        $departments = Department::select('id', 'name', 'cluster_id')->get();
-        $statuses = Employee::getStatuses(); // new
+    $clusters = Cluster::select('id', 'name')->get();
+    $departments = Department::select('id', 'name', 'cluster_id')->get();
+    $statuses = Employee::getStatuses();
 
-        return Inertia::render('HR/Employees/Index', [
-            'employees' => $employees,
-            'clusters' => $clusters,
-            'departments' => $departments,
-            'statuses' => $statuses, // pass to frontend
-            'filters' => [
-                'search' => $search,
-                'cluster_id' => $clusterId,
-                'department_id' => $departmentId,
-                'employment_status' => $statusFilter,
-            ],
-        ]);
-    }
-
+    return Inertia::render('HR/Employees/Index', [
+        'employees' => $employees,
+        'clusters' => $clusters,
+        'departments' => $departments,
+        'statuses' => $statuses,
+        'filters' => [
+            'search' => $search,
+            'cluster_id' => $clusterId,
+            'department_id' => $departmentId,
+            'employment_status' => $statusFilter,
+        ],
+    ]);
+}
 
 
 
@@ -206,4 +206,8 @@ public function edit(Employee $employee)
             ->with('success', 'Employee updated successfully.');
     }
 
+
+
+
+    
 }
