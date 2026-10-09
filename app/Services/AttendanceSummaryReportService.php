@@ -36,13 +36,14 @@ class AttendanceSummaryReportService
      */
     private function buildReportData(array $filters = []): array
     {
-        $eventIds = $filters['event_ids'] ?? [];
-        $clusterId = $filters['cluster_id'] ?? null;
-        $departmentId = $filters['department_id'] ?? null;
-        $dateFrom = $filters['date_from'] ?? null;
-        $dateTo = $filters['date_to'] ?? null;
+        $eventIds      = $filters['event_ids'] ?? [];
+        $clusterId     = $filters['cluster_id'] ?? null;
+        $departmentId  = $filters['department_id'] ?? null;
+        $dateFrom      = $filters['date_from'] ?? null;
+        $dateTo        = $filters['date_to'] ?? null;
+        $maxAttendance = $filters['max_attendance'] ?? null;   // ✅ NEW
 
-        // Query events
+        // ==================== Query events ====================
         $eventsQuery = Event::orderBy('date');
 
         if (!empty($eventIds)) {
@@ -58,7 +59,7 @@ class AttendanceSummaryReportService
 
         $events = $eventsQuery->get(['id', 'title', 'date', 'time']);
 
-        // Query employees
+        // ==================== Query employees ====================
         $employeesQuery = Employee::with('department.cluster')
             ->orderBy('department_id')
             ->orderBy('last_name');
@@ -75,17 +76,17 @@ class AttendanceSummaryReportService
 
         $employees = $employeesQuery->get();
 
-        // Fetch all attendances for these events and employees
-        $eventIds = $events->pluck('id')->toArray();
+        // ==================== Fetch attendances ====================
+        $eventIds    = $events->pluck('id')->toArray();
         $employeeIds = $employees->pluck('id')->toArray();
 
         $attendances = Attendance::whereIn('event_id', $eventIds)
             ->whereIn('employee_id', $employeeIds)
             ->get(['employee_id', 'event_id', 'time_in', 'status']);
 
-        // Group by employee_id
         $attendanceGrouped = $attendances->groupBy('employee_id');
 
+        // ==================== Build the report ====================
         $report = [];
 
         foreach ($employees as $employee) {
@@ -95,11 +96,11 @@ class AttendanceSummaryReportService
             }
 
             $employeeData = [
-                'id' => $employee->id,
-                'name' => $employee->full_name,
-                'events' => [],
+                'id'             => $employee->id,
+                'name'           => $employee->full_name,
+                'events'         => [],
                 'attended_count' => 0,
-                'late_count' => 0,
+                'late_count'     => 0,
             ];
 
             $empAttendances = $attendanceGrouped->get($employee->id, collect())->keyBy('event_id');
@@ -108,25 +109,25 @@ class AttendanceSummaryReportService
                 $attendance = $empAttendances->get($event->id);
 
                 if ($attendance) {
-                    // Determine status: present or late
-                    $status = $attendance->status ?? 'present'; // fallback
+                    $status = $attendance->status ?? 'present';
                     $employeeData['events'][] = [
                         'event_id' => $event->id,
-                        'present' => ($status === 'present'), // for attendance count
-                        'status' => $status, // 'present' or 'late'
-                        'time_in' => $attendance->time_in,
+                        'present'  => ($status === 'present'),
+                        'status'   => $status,
+                        'time_in'  => $attendance->time_in,
                     ];
+
                     if ($status === 'present') {
                         $employeeData['attended_count']++;
-                    } else {
+                    } elseif ($status === 'late') {
                         $employeeData['late_count']++;
                     }
                 } else {
                     $employeeData['events'][] = [
                         'event_id' => $event->id,
-                        'present' => false,
-                        'status' => 'absent',
-                        'time_in' => null,
+                        'present'  => false,
+                        'status'   => 'absent',
+                        'time_in'  => null,
                     ];
                 }
             }
@@ -134,29 +135,62 @@ class AttendanceSummaryReportService
             $report[$deptName]['employees'][] = $employeeData;
         }
 
-        // Sort employees by name within each department
+        // ==================== Sort employees by name ====================
         foreach ($report as $dept => &$data) {
             $data['employees'] = collect($data['employees'])->sortBy('name')->values()->toArray();
         }
+        unset($data);
 
-        // Add filter summary
+        // ==================== ✅ Apply max_attendance filter ====================
+        if ($maxAttendance !== null && $maxAttendance !== '') {
+            $max = (int) $maxAttendance;
+
+            foreach ($report as $dept => &$data) {
+                $data['employees'] = array_values(array_filter(
+                    $data['employees'],
+                    function ($emp) use ($max) {
+                        $totalAttended = $emp['attended_count'] + $emp['late_count'];
+                        return $totalAttended <= $max;
+                    }
+                ));
+            }
+            unset($data);
+
+            // Remove departments with no remaining employees
+            $report = array_filter($report, function ($d) {
+                return count($d['employees']) > 0;
+            });
+        }
+
+        // ==================== Filter summary ====================
         $filterSummary = [];
         if ($dateFrom) $filterSummary[] = 'From ' . Carbon::parse($dateFrom)->format('M d, Y');
-        if ($dateTo) $filterSummary[] = 'To ' . Carbon::parse($dateTo)->format('M d, Y');
+        if ($dateTo)   $filterSummary[] = 'To ' . Carbon::parse($dateTo)->format('M d, Y');
+
         if ($clusterId) {
             $cluster = \App\Models\Cluster::find($clusterId);
             if ($cluster) $filterSummary[] = 'Cluster: ' . $cluster->name;
         }
+
         if ($departmentId) {
             $dept = \App\Models\Department::find($departmentId);
             if ($dept) $filterSummary[] = 'Department: ' . $dept->name;
         }
 
+        if (!empty($eventIds)) {
+            $filterSummary[] = 'Events: ' . count($eventIds);
+        }
+
+        // ✅ NEW: show the threshold in the PDF header
+        if ($maxAttendance !== null && $maxAttendance !== '') {
+            $filterSummary[] = 'Attended ≤ ' . $maxAttendance . ' event(s)';
+        }
+
         return [
-            'events' => $events,
-            'report' => $report,
+            'events'       => $events,
+            'report'       => $report,
             'generated_at' => now()->format('F d, Y h:i A'),
-            'filters' => $filterSummary,
+            'filters'      => $filterSummary,
         ];
     }
 }

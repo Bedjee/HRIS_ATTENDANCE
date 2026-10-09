@@ -14,11 +14,19 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
     department_id: '',
     date_from: '',
     date_to: '',
+    max_attendance: '', // ✅ NEW
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = () => {
-    if (filters.event_ids.length === 0 && !filters.cluster_id && !filters.department_id && !filters.date_from && !filters.date_to) {
+    if (
+      filters.event_ids.length === 0 &&
+      !filters.cluster_id &&
+      !filters.department_id &&
+      !filters.date_from &&
+      !filters.date_to &&
+      filters.max_attendance === ''
+    ) {
       toast.error('Please select at least one filter.');
       return;
     }
@@ -32,6 +40,9 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
     if (filters.department_id) params.append('department_id', filters.department_id);
     if (filters.date_from) params.append('date_from', filters.date_from);
     if (filters.date_to) params.append('date_to', filters.date_to);
+    if (filters.max_attendance !== '') {
+      params.append('max_attendance', filters.max_attendance);
+    }
 
     const url = route('hr.reports.attendance-summary-pdf') + '?' + params.toString();
     window.location.href = url;
@@ -41,20 +52,20 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
   };
 
   const toggleEvent = (eventId) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const current = prev.event_ids.includes(eventId)
-        ? prev.event_ids.filter(id => id !== eventId)
+        ? prev.event_ids.filter((id) => id !== eventId)
         : [...prev.event_ids, eventId];
       return { ...prev, event_ids: current };
     });
   };
 
   const toggleAllEvents = () => {
-    setFilters(prev => {
+    setFilters((prev) => {
       if (prev.event_ids.length === events.length) {
         return { ...prev, event_ids: [] };
       } else {
-        return { ...prev, event_ids: events.map(e => e.id) };
+        return { ...prev, event_ids: events.map((e) => e.id) };
       }
     });
   };
@@ -62,6 +73,8 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
   const filteredDepartments = departments.filter(
     (dept) => !filters.cluster_id || dept.cluster_id == filters.cluster_id
   );
+
+  const selectedEventCount = filters.event_ids.length;
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -97,7 +110,7 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
                   Select filters for the attendance summary report.
                 </Dialog.Description>
 
-                <div className="mt-4 space-y-4">
+                <div className="mt-4 max-h-[60vh] space-y-4 overflow-y-auto pr-1">
                   {/* Events - multi-select */}
                   <div>
                     <div className="flex items-center justify-between">
@@ -112,14 +125,19 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
                     </div>
                     <div className="mt-1 max-h-40 overflow-y-auto rounded border border-gray-200 p-2">
                       {events.map((event) => (
-                        <label key={event.id} className="flex items-center space-x-2 text-sm py-1 hover:bg-gray-50 rounded px-1">
+                        <label
+                          key={event.id}
+                          className="flex items-center space-x-2 rounded px-1 py-1 text-sm hover:bg-gray-50"
+                        >
                           <input
                             type="checkbox"
                             checked={filters.event_ids.includes(event.id)}
                             onChange={() => toggleEvent(event.id)}
                             className="rounded border-gray-300 text-navy-600 focus:ring-navy-500"
                           />
-                          <span className="truncate">{event.title} ({event.date})</span>
+                          <span className="truncate">
+                            {event.title} ({event.date})
+                          </span>
                         </label>
                       ))}
                       {events.length === 0 && (
@@ -137,7 +155,7 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
                     <SelectInput
                       value={filters.cluster_id}
                       onChange={(e) => {
-                        setFilters(prev => ({
+                        setFilters((prev) => ({
                           ...prev,
                           cluster_id: e.target.value,
                           department_id: '',
@@ -159,7 +177,9 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
                     <InputLabel value="Department" />
                     <SelectInput
                       value={filters.department_id}
-                      onChange={(e) => setFilters(prev => ({ ...prev, department_id: e.target.value }))}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, department_id: e.target.value }))
+                      }
                       className="mt-1 block w-full"
                     >
                       <option value="">All Departments</option>
@@ -178,7 +198,9 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
                       <TextInput
                         type="date"
                         value={filters.date_from}
-                        onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, date_from: e.target.value }))
+                        }
                         className="mt-1 block w-full"
                       />
                     </div>
@@ -187,16 +209,51 @@ export default function SummaryPDFModal({ isOpen, onClose, events, clusters, dep
                       <TextInput
                         type="date"
                         value={filters.date_to}
-                        onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, date_to: e.target.value }))
+                        }
                         className="mt-1 block w-full"
                       />
                     </div>
+                  </div>
+
+                  {/* ✅ Maximum Events Attended */}
+                  <div>
+                    <InputLabel value="Maximum Events Attended" />
+                    <TextInput
+                      type="number"
+                      min="0"
+                      placeholder="Leave empty to include everyone"
+                      value={filters.max_attendance}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          max_attendance: e.target.value,
+                        }))
+                      }
+                      className="mt-1 block w-full"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {selectedEventCount > 0 && filters.max_attendance !== ''
+                        ? `Include only employees who attended ${filters.max_attendance} or fewer out of the ${selectedEventCount} selected event(s).`
+                        : 'Include only employees whose attended count is at or below this number.'}
+                    </p>
                   </div>
                 </div>
 
                 <div className="mt-6 flex justify-end gap-2">
                   <button
-                    onClick={onClose}
+                    onClick={() => {
+                      onClose();
+                      setFilters({
+                        event_ids: [],
+                        cluster_id: '',
+                        department_id: '',
+                        date_from: '',
+                        date_to: '',
+                        max_attendance: '',
+                      });
+                    }}
                     className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Cancel
