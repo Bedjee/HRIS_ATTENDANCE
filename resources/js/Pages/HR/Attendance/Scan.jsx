@@ -70,6 +70,9 @@ const getEventStatus = (event) => {
   return 'upcoming';
 };
 
+
+
+
 // Sort: ongoing → upcoming (soonest first) → completed (most recent first)
 const sortEventsByStatus = (list) => {
   const priority = { ongoing: 0, upcoming: 1, completed: 2 };
