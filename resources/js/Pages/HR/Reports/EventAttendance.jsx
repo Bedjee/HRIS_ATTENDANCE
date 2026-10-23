@@ -10,7 +10,7 @@ import axios from 'axios';
 import { FileText } from 'lucide-react';
 import SummaryPDFModal from '@/Components/SummaryPDFModal';
 
-export default function EventAttendance({ auth, events, clusters, departments }) {
+export default function EventAttendance({ auth, events, clusters, departments,statuses }) {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [clusterFilter, setClusterFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
@@ -289,6 +289,7 @@ export default function EventAttendance({ auth, events, clusters, departments })
         events={events}
         clusters={clusters}
         departments={departments}
+         statuses={statuses || []}  
       />
     </HRLayout>
   );

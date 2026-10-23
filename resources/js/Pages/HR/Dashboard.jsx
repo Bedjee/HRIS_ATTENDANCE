@@ -19,10 +19,10 @@ import {
   BarChart3,
   Building2,
   ListChecks,
+  Briefcase,   // ✅ NEW
 } from 'lucide-react';
 
 export default function Dashboard({ auth, summary, todayOverview, upcomingEvents, recentActivity }) {
-  // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -34,9 +34,9 @@ export default function Dashboard({ auth, summary, todayOverview, upcomingEvents
   const currentTime = formatTime(new Date());
 
   const formatEventTime = (date, time) => {
-  if (!date || !time) return '—';
-  return formatTime(`${date}T${time}`);
-};
+    if (!date || !time) return '—';
+    return formatTime(`${date}T${time}`);
+  };
 
   return (
     <HRLayout user={auth.user}>
@@ -66,7 +66,7 @@ export default function Dashboard({ auth, summary, todayOverview, upcomingEvents
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             <div className="rounded-xl bg-white p-4 shadow-sm">
               <dt className="text-sm font-medium text-gray-500">Employees</dt>
               <dd className="text-xl font-bold text-navy-800">{summary.total_employees}</dd>
@@ -95,6 +95,17 @@ export default function Dashboard({ auth, summary, todayOverview, upcomingEvents
               <dt className="text-sm font-medium text-gray-500">Total Records</dt>
               <dd className="text-xl font-bold text-navy-800">{summary.total_attendance_records}</dd>
             </div>
+
+            {/* ✅ NEW: Job Order employees card */}
+            <div className="rounded-xl bg-white p-4 shadow-sm border-l-4 border-amber-500">
+              <dt className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                <Briefcase className="h-3.5 w-3.5 text-amber-600" />
+                Job Order (JO)
+              </dt>
+              <dd className="text-xl font-bold text-amber-700">
+                {summary.total_job_order_employees ?? 0}
+              </dd>
+            </div>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -106,34 +117,33 @@ export default function Dashboard({ auth, summary, todayOverview, upcomingEvents
               </h2>
               <div className="mt-4 space-y-3">
                 {todayOverview.ongoing_event ? (
-  <div className="flex items-start gap-3 rounded-lg bg-green-50 p-3">
-    <CalendarCheck className="h-5 w-5 text-green-600 mt-0.5" />
-    <div>
-      <p className="text-sm font-medium text-green-800">Ongoing Event</p>
-      <p className="text-sm text-green-700">{todayOverview.ongoing_event.title}</p>
-      <p className="text-xs text-green-600">
-        {formatEventTime(todayOverview.ongoing_event.date, todayOverview.ongoing_event.time)}
-      </p>
-      {/* === NEW: Required Summary === */}
-      <div className="mt-1 text-xs text-green-600">
-        <p><strong>Attendance Mode:</strong> {todayOverview.ongoing_event.required_summary?.mode}</p>
-        {todayOverview.ongoing_event.required_summary?.clusters && (
-          <p><strong>Clusters:</strong> {todayOverview.ongoing_event.required_summary.clusters.join(', ')}</p>
-        )}
-        {todayOverview.ongoing_event.required_summary?.departments && (
-          <p><strong>Departments:</strong> {todayOverview.ongoing_event.required_summary.departments.join(', ')}</p>
-        )}
-        {todayOverview.ongoing_event.required_summary?.total !== undefined && (
-          <p><strong>Selected Employees:</strong> {todayOverview.ongoing_event.required_summary.total}</p>
-        )}
-      </div>
-    </div>
-  </div>
-) : (
-  <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
-    No ongoing event today.
-  </div>
-)}
+                  <div className="flex items-start gap-3 rounded-lg bg-green-50 p-3">
+                    <CalendarCheck className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-green-800">Ongoing Event</p>
+                      <p className="text-sm text-green-700">{todayOverview.ongoing_event.title}</p>
+                      <p className="text-xs text-green-600">
+                        {formatEventTime(todayOverview.ongoing_event.date, todayOverview.ongoing_event.time)}
+                      </p>
+                      <div className="mt-1 text-xs text-green-600">
+                        <p><strong>Attendance Mode:</strong> {todayOverview.ongoing_event.required_summary?.mode}</p>
+                        {todayOverview.ongoing_event.required_summary?.clusters && (
+                          <p><strong>Clusters:</strong> {todayOverview.ongoing_event.required_summary.clusters.join(', ')}</p>
+                        )}
+                        {todayOverview.ongoing_event.required_summary?.departments && (
+                          <p><strong>Departments:</strong> {todayOverview.ongoing_event.required_summary.departments.join(', ')}</p>
+                        )}
+                        {todayOverview.ongoing_event.required_summary?.total !== undefined && (
+                          <p><strong>Selected Employees:</strong> {todayOverview.ongoing_event.required_summary.total}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
+                    No ongoing event today.
+                  </div>
+                )}
                 {todayOverview.upcoming_event ? (
                   <div className="flex items-start gap-3 rounded-lg bg-blue-50 p-3">
                     <CalendarDays className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -141,7 +151,7 @@ export default function Dashboard({ auth, summary, todayOverview, upcomingEvents
                       <p className="text-sm font-medium text-blue-800">Upcoming Event</p>
                       <p className="text-sm text-blue-700">{todayOverview.upcoming_event.title}</p>
                       <p className="text-xs text-blue-600">
-                       {formatEventTime(todayOverview.upcoming_event.date, todayOverview.upcoming_event.time)}
+                        {formatEventTime(todayOverview.upcoming_event.date, todayOverview.upcoming_event.time)}
                       </p>
                     </div>
                   </div>
@@ -191,21 +201,23 @@ export default function Dashboard({ auth, summary, todayOverview, upcomingEvents
                 </div>
               ) : (
                 <ul className="mt-4 divide-y divide-gray-100">
-
-  {upcomingEvents.map((event) => (
-    <li key={event.id} className="py-3 first:pt-0 last:pb-0">
-      <div className="flex justify-between">
-        <div>
-          <p className="font-medium text-navy-700">{event.title}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-            <span>{formatDate(event.date)}</span>
-            <span>at {formatEventTime(event.date, event.time)}</span>
-            <span>• {event.venue}</span>
-          </div>
-        </div>
-        <Link href={route('hr.events.edit', event.id)} className="text-sm text-navy-600 hover:text-navy-800">
-          View
-        </Link>
+                  {upcomingEvents.map((event) => (
+                    <li key={event.id} className="py-3 first:pt-0 last:pb-0">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-navy-700">{event.title}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                            <span>{formatDate(event.date)}</span>
+                            <span>at {formatEventTime(event.date, event.time)}</span>
+                            <span>• {event.venue}</span>
+                          </div>
+                        </div>
+                        <Link
+                          href={route('hr.events.edit', event.id)}
+                          className="text-sm text-navy-600 hover:text-navy-800"
+                        >
+                          View
+                        </Link>
                       </div>
                     </li>
                   ))}

@@ -24,6 +24,9 @@ class DashboardController extends Controller
         $todayAttendance = Attendance::whereDate('time_in', Carbon::today())->count();
         $totalAttendanceRecords = Attendance::count();
 
+        // ✅ NEW: Job Order employee count
+        $totalJobOrderEmployees = Employee::where('employment_status', Employee::STATUS_JOB_ORDER)->count();
+
         // Today's Overview
         $ongoingEvent = Event::where('status', 'ongoing')->first();
         $upcomingEvent = Event::where('status', 'upcoming')
@@ -46,7 +49,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get(['id', 'title', 'date', 'time', 'venue']);
 
-        // Recent Activity Feed (combine recent events, attendance, employees)
+        // Recent Activity Feed
         $recentEvents = Event::latest()->limit(5)->get()->map(function ($item) {
             return [
                 'type' => 'event_created',
@@ -81,7 +84,6 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Merge and sort by created_at descending
         $recentActivity = collect()
             ->merge($recentEvents)
             ->merge($recentAttendance)
@@ -135,6 +137,7 @@ class DashboardController extends Controller
                 'active_events' => $activeEvents,
                 'today_attendance' => $todayAttendance,
                 'total_attendance_records' => $totalAttendanceRecords,
+                'total_job_order_employees' => $totalJobOrderEmployees,   // ✅ NEW
             ],
             'todayOverview' => [
                 'ongoing_event' => $ongoingEventData,

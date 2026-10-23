@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\HR;
-
+use App\Models\Employee; 
 use App\Http\Controllers\Controller;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
@@ -26,17 +26,19 @@ class ReportController extends Controller
      * Show the attendance report page.
      */
     public function index()
-    {
-        $events = $this->reportService->getAllEvents();
-        $clusters = Cluster::select('id', 'name')->get();
-        $departments = Department::select('id', 'name', 'cluster_id')->get();
+{
+    $events = $this->reportService->getAllEvents();
+    $clusters = Cluster::select('id', 'name')->get();
+    $departments = Department::select('id', 'name', 'cluster_id')->get();
+    $statuses = Employee::getStatuses();   // ✅ NEW
 
-        return Inertia::render('HR/Reports/EventAttendance', [
-            'events' => $events,
-            'clusters' => $clusters,
-            'departments' => $departments,
-        ]);
-    }
+    return Inertia::render('HR/Reports/EventAttendance', [
+        'events' => $events,
+        'clusters' => $clusters,
+        'departments' => $departments,
+        'statuses' => $statuses,   // ✅ NEW
+    ]);
+}
 
     /**
      * Fetch attendance data for a specific event (API).
@@ -89,7 +91,8 @@ public function attendanceSummaryPdf(Request $request, AttendanceSummaryReportSe
         'department_id',
         'date_from',
         'date_to',
-        'max_attendance',   // ← must be here
+        'max_attendance',
+        'employment_status',   // ✅ NEW
     ]);
 
     if (isset($filters['event_ids']) && is_string($filters['event_ids'])) {
@@ -98,6 +101,8 @@ public function attendanceSummaryPdf(Request $request, AttendanceSummaryReportSe
 
     return $service->generatePdf($filters);
 }
+
+
 
 
 
