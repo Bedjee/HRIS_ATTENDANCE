@@ -17,23 +17,156 @@ import {
     MapPin,
     Phone,
     CheckCircle,
-    Ghost,
+    Star,
 } from 'lucide-react';
 
 /* ---------------------------------- */
-/* Decorative bat silhouette          */
+/* Compact parol mark (for the logo)  */
 /* ---------------------------------- */
-function Bat({ className = '', style }) {
+function ParolMark({ className = '' }) {
     return (
-        <svg
-            viewBox="0 0 100 40"
-            className={className}
-            style={style}
-            fill="currentColor"
-            aria-hidden="true"
-        >
-            <path d="M50 12c-2 0-3.5 1.5-4 3-3-4-8-6-14-6 1.5 2.5 1.5 5 0 7-3-2.5-8-3-12-1 4 2 5 6 4 10-4-1-8 1-10 4 5-1 9 1 11 5 2 4 6 6 10 5 4-1 6-4 7-8 1.5 3 3.5 5 6 6 1-4 2-8 3-11 1 3 2 7 3 11 2.5-1 4.5-3 6-6 1 4 3 7 7 8 4 1 8-1 10-5 2-4 6-6 11-5-2-3-6-5-10-4-1-4 0-8 4-10-4-2-9-1.5-12 1-1.5-2-1.5-4.5 0-7-6 0-11 2-14 6-.5-1.5-2-3-4-3z" />
+        <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
+            <defs>
+                <linearGradient id="pmBody" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fef3c7" />
+                    <stop offset="55%" stopColor="#fbbf24" />
+                    <stop offset="100%" stopColor="#f59e0b" />
+                </linearGradient>
+            </defs>
+            <path
+                d="M50 6 L61.2 34.6 L91.9 36.4 L68.1 55.9 L75.9 85.6 L50 69 L24.1 85.6 L31.9 55.9 L8.1 36.4 L38.8 34.6 Z"
+                fill="url(#pmBody)"
+                stroke="#fffbeb"
+                strokeWidth="1.4"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M50 28 L55.6 42.3 L70.9 43.2 L59.0 52.9 L63.0 67.7 L50 59.5 L37.0 67.7 L41.0 52.9 L29.1 43.2 L44.4 42.3 Z"
+                fill="#fffbeb"
+                opacity="0.92"
+            />
+            <circle cx="50" cy="50" r="4.5" fill="#fde68a" />
         </svg>
+    );
+}
+
+/* ---------------------------------- */
+/* Full hanging parol lantern         */
+/* ---------------------------------- */
+function Parol({ className = '', style }) {
+    return (
+        <svg viewBox="0 0 100 120" className={className} style={style} aria-hidden="true">
+            <defs>
+                <radialGradient id="parolBody" cx="50%" cy="40%" r="65%">
+                    <stop offset="0%" stopColor="#fffbeb" />
+                    <stop offset="35%" stopColor="#fde68a" />
+                    <stop offset="70%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#b91c1c" />
+                </radialGradient>
+                <radialGradient id="parolCore" cx="50%" cy="40%" r="60%">
+                    <stop offset="0%" stopColor="#fffbeb" />
+                    <stop offset="60%" stopColor="#fef3c7" />
+                    <stop offset="100%" stopColor="#fbbf24" />
+                </radialGradient>
+                <linearGradient id="parolTail" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#dc2626" />
+                    <stop offset="100%" stopColor="#7f1d1d" />
+                </linearGradient>
+            </defs>
+
+            {/* radiating light rays */}
+            <g stroke="#fbbf24" strokeWidth="1" strokeOpacity="0.5" strokeLinecap="round">
+                <line x1="50" y1="46" x2="50" y2="0" />
+                <line x1="50" y1="46" x2="92" y2="20" />
+                <line x1="50" y1="46" x2="96" y2="62" />
+                <line x1="50" y1="46" x2="8" y2="20" />
+                <line x1="50" y1="46" x2="4" y2="62" />
+                <line x1="50" y1="46" x2="28" y2="94" />
+                <line x1="50" y1="46" x2="72" y2="94" />
+                <line x1="50" y1="46" x2="70" y2="0" />
+                <line x1="50" y1="46" x2="30" y2="0" />
+            </g>
+
+            {/* star body */}
+            <path
+                d="M50 8 L60 34.3 L88 35.6 L66.2 53.3 L73.5 80.4 L50 65 L26.5 80.4 L33.8 53.3 L12 35.6 L40 34.3 Z"
+                fill="url(#parolBody)"
+                stroke="#f59e0b"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+            />
+
+            {/* capiz inner star */}
+            <path
+                d="M50 28 L55 41.1 L69 41.8 L58.1 50.6 L61.8 64.2 L50 56.5 L38.2 64.2 L41.9 50.6 L31 41.8 L45 41.1 Z"
+                fill="url(#parolCore)"
+                stroke="#fde68a"
+                strokeWidth="0.8"
+                strokeLinejoin="round"
+            />
+
+            {/* glowing center */}
+            <circle cx="50" cy="46" r="10" fill="#fef3c7" opacity="0.35" />
+            <circle cx="50" cy="46" r="5.5" fill="#fffbeb" />
+
+            {/* hanging tails */}
+            <path d="M43 82 Q40 98 36 112" fill="none" stroke="url(#parolTail)" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M57 82 Q60 98 64 112" fill="none" stroke="url(#parolTail)" strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="36" cy="113" r="2.2" fill="#fbbf24" />
+            <circle cx="64" cy="113" r="2.2" fill="#fbbf24" />
+        </svg>
+    );
+}
+
+/* ---------------------------------- */
+/* Banderitas bunting                 */
+/* ---------------------------------- */
+function Banderitas({ className = '' }) {
+    const palette = ['#dc2626', '#fbbf24', '#16a34a', '#f59e0b', '#ef4444', '#22c55e'];
+    const count = 24;
+    const flags = Array.from({ length: count }).map((_, i) => {
+        const t = i / (count - 1);
+        return {
+            color: palette[i % palette.length],
+            sag: Math.sin(Math.PI * t) * 12,
+            delay: `${(i % 7) * 0.28}s`,
+        };
+    });
+
+    return (
+        <div className={`relative w-full ${className}`} aria-hidden="true">
+            {/* the sagging string */}
+            <svg
+                className="absolute inset-x-0 top-0 w-full h-6 text-amber-300/45"
+                viewBox="0 0 100 20"
+                preserveAspectRatio="none"
+                fill="none"
+            >
+                <path
+                    d="M0 2 Q 50 18 100 2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    vectorEffect="non-scaling-stroke"
+                />
+            </svg>
+            {/* flags */}
+            <div className="relative flex justify-between items-start px-1 pt-1">
+                {flags.map((f, i) => (
+                    <div
+                        key={i}
+                        className="w-2.5 h-4 sm:w-3.5 sm:h-5 md:w-4 md:h-6"
+                        style={{
+                            marginTop: `${f.sag}px`,
+                            backgroundColor: f.color,
+                            clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                            transformOrigin: 'top center',
+                            animation: 'flagsway 3.2s ease-in-out infinite',
+                            animationDelay: f.delay,
+                        }}
+                    />
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -57,13 +190,13 @@ export default function Welcome({ auth }) {
         hour12: true,
     });
 
-    // QR generation — dark purple code on white for a themed (but scannable) look
+    // QR generation — warm dark red on white, still perfectly scannable
     const qrData = auth?.user?.id
         ? `https://hris.lgu.gov.ph/checkin/${auth.user.id}`
         : 'https://hris.lgu.gov.ph/checkin';
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
         qrData
-    )}&size=180x180&margin=12&color=2a0f45&bgcolor=ffffff`;
+    )}&size=180x180&margin=12&color=7f1d1d&bgcolor=ffffff`;
 
     const stats = {
         checkIns: 486,
@@ -80,38 +213,47 @@ export default function Welcome({ auth }) {
     ];
 
     const stars = [
-        { top: '10%', left: '12%', size: 3, delay: '0s' },
-        { top: '18%', left: '32%', size: 2, delay: '0.8s' },
-        { top: '8%', left: '58%', size: 2, delay: '1.6s' },
-        { top: '24%', left: '72%', size: 3, delay: '0.4s' },
-        { top: '36%', left: '6%', size: 2, delay: '2.1s' },
-        { top: '44%', left: '88%', size: 2, delay: '1.2s' },
-        { top: '62%', left: '18%', size: 2, delay: '0.6s' },
-        { top: '70%', left: '48%', size: 3, delay: '1.9s' },
-        { top: '56%', left: '64%', size: 2, delay: '2.6s' },
-        { top: '80%', left: '78%', size: 2, delay: '1.1s' },
+        { top: '8%',  left: '9%',  size: 2, delay: '0s' },
+        { top: '16%', left: '28%', size: 2, delay: '1.1s' },
+        { top: '6%',  left: '52%', size: 2, delay: '2.0s' },
+        { top: '22%', left: '68%', size: 3, delay: '0.5s' },
+        { top: '34%', left: '4%',  size: 2, delay: '2.4s' },
+        { top: '46%', left: '92%', size: 2, delay: '1.5s' },
+        { top: '64%', left: '14%', size: 2, delay: '0.8s' },
+        { top: '72%', left: '44%', size: 3, delay: '2.1s' },
+        { top: '58%', left: '60%', size: 2, delay: '2.8s' },
+        { top: '82%', left: '80%', size: 2, delay: '1.3s' },
     ];
+
+    // Warm golden light motes drifting through the night air
+    const motes = Array.from({ length: 16 }).map((_, i) => ({
+        left: (i * 37 + 11) % 100,
+        top: 12 + ((i * 23) % 68),
+        size: 3 + (i % 3) * 2,
+        delay: (i * 0.7) % 6,
+        duration: 5 + (i % 5) * 1.4,
+    }));
 
     return (
         <>
             <Head title="Welcome - HRIS Attendance" />
 
-            <div className="min-h-screen bg-gradient-to-b from-[#0d0718] via-[#150b24] to-[#08040f] font-sans antialiased overflow-x-hidden">
+            <div className="min-h-screen bg-gradient-to-b from-[#071820] via-[#0a1f2a] to-[#041016] font-sans antialiased overflow-x-hidden">
 
                 {/* ========== NAVBAR ========== */}
-                <nav className="sticky top-0 z-50 bg-[#0c0616]/80 backdrop-blur-xl border-b border-orange-500/20">
+                <nav className="sticky top-0 z-50 bg-[#071820]/85 backdrop-blur-xl border-b border-amber-400/20">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <Link href="/" className="flex items-center space-x-3 flex-shrink-0">
-                                <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-[0_0_22px_-2px_rgba(249,115,22,0.75)]">
-                                    <Scan className="h-5 w-5" />
-                                    <span className="absolute -inset-1 rounded-2xl border border-orange-400/40 animate-[flicker_3s_ease-in-out_infinite]" />
+                                <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 shadow-[0_0_24px_-2px_rgba(239,68,68,0.7)]">
+                                    <ParolMark className="h-6 w-6 drop-shadow-[0_0_6px_rgba(255,251,235,0.6)]" />
+                                    <span className="absolute -inset-1 rounded-2xl border border-amber-300/40 animate-[flicker_3s_ease-in-out_infinite]" />
                                 </div>
                                 <div>
                                     <span className="text-xl font-extrabold text-white tracking-tight">
                                         HRIS
                                     </span>
-                                    <span className="block text-[8px] font-bold uppercase tracking-[0.2em] text-orange-300/80 -mt-0.5">
+                                    <span className="block text-[8px] font-bold uppercase tracking-[0.2em] text-amber-300/80 -mt-0.5">
                                         Attendance System
                                     </span>
                                 </div>
@@ -122,7 +264,7 @@ export default function Welcome({ auth }) {
                                     <Link
                                         key={link.name}
                                         href={link.href}
-                                        className="px-4 py-2 text-sm font-medium rounded-xl text-slate-300 hover:text-orange-300 hover:bg-white/5 transition"
+                                        className="px-4 py-2 text-sm font-medium rounded-xl text-slate-300 hover:text-amber-300 hover:bg-white/5 transition"
                                     >
                                         {link.name}
                                     </Link>
@@ -130,18 +272,16 @@ export default function Welcome({ auth }) {
                             </div>
 
                             <div className="flex items-center space-x-3">
-                                {/* Live clock (desktop) */}
                                 <div className="hidden lg:flex items-center space-x-2 text-xs font-medium text-slate-400">
-                                    <Calendar className="h-3.5 w-3.5 text-orange-400/70" />
+                                    <Calendar className="h-3.5 w-3.5 text-amber-400/70" />
                                     <span>{formattedDate}</span>
-                                    <span className="text-orange-400/40">•</span>
-                                    <span className="tabular-nums text-orange-200/80">
+                                    <span className="text-amber-400/40">•</span>
+                                    <span className="tabular-nums text-amber-200/90">
                                         {formattedTime}
                                     </span>
                                 </div>
 
-                                {/* Status pill */}
-                                <div className="hidden sm:flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-full border border-emerald-400/20">
+                                <div className="hidden sm:flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-full border border-emerald-400/25">
                                     <span className="relative flex h-2.5 w-2.5">
                                         <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping" />
                                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
@@ -154,7 +294,7 @@ export default function Welcome({ auth }) {
                                 {auth.user ? (
                                     <Link
                                         href={route('dashboard')}
-                                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white text-sm font-semibold rounded-xl shadow-[0_0_20px_-6px_rgba(249,115,22,0.9)] transition"
+                                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-sm font-semibold rounded-xl ring-1 ring-amber-300/30 shadow-[0_0_20px_-6px_rgba(239,68,68,0.9)] transition"
                                     >
                                         <Lock className="mr-1.5 h-4 w-4" />
                                         Dashboard
@@ -162,7 +302,7 @@ export default function Welcome({ auth }) {
                                 ) : (
                                     <Link
                                         href={route('login')}
-                                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white text-sm font-semibold rounded-xl shadow-[0_0_20px_-6px_rgba(249,115,22,0.9)] transition"
+                                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-sm font-semibold rounded-xl ring-1 ring-amber-300/30 shadow-[0_0_20px_-6px_rgba(239,68,68,0.9)] transition"
                                     >
                                         <Lock className="mr-1.5 h-4 w-4" />
                                         Log In
@@ -175,9 +315,9 @@ export default function Welcome({ auth }) {
                                     aria-label="Toggle menu"
                                 >
                                     {mobileMenuOpen ? (
-                                        <X className="h-6 w-6 text-orange-200" />
+                                        <X className="h-6 w-6 text-amber-200" />
                                     ) : (
-                                        <Menu className="h-6 w-6 text-orange-200" />
+                                        <Menu className="h-6 w-6 text-amber-200" />
                                     )}
                                 </button>
                             </div>
@@ -186,13 +326,13 @@ export default function Welcome({ auth }) {
 
                     {/* Mobile menu */}
                     {mobileMenuOpen && (
-                        <div className="md:hidden bg-[#0c0616]/95 backdrop-blur-lg border-t border-orange-500/20 shadow-2xl">
+                        <div className="md:hidden bg-[#071820]/95 backdrop-blur-lg border-t border-amber-400/20 shadow-2xl">
                             <div className="px-4 py-4 space-y-1">
                                 {navLinks.map((link) => (
                                     <Link
                                         key={link.name}
                                         href={link.href}
-                                        className="block px-4 py-2.5 text-sm font-medium rounded-xl text-slate-300 hover:text-orange-300 hover:bg-white/5 transition"
+                                        className="block px-4 py-2.5 text-sm font-medium rounded-xl text-slate-300 hover:text-amber-300 hover:bg-white/5 transition"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
                                         {link.name}
@@ -204,7 +344,7 @@ export default function Welcome({ auth }) {
                                             <span className="h-2 w-2 rounded-full bg-emerald-400" />
                                             System Online
                                         </span>
-                                        <span className="tabular-nums text-orange-200/80">
+                                        <span className="tabular-nums text-amber-200/90">
                                             {formattedTime}
                                         </span>
                                     </div>
@@ -215,29 +355,27 @@ export default function Welcome({ auth }) {
                             </div>
                         </div>
                     )}
+
+                    {/* Banderitas strip under the navbar */}
+                    <div className="bg-[#08141b]/60 border-t border-amber-400/10">
+                        <Banderitas className="h-8 sm:h-9 overflow-hidden" />
+                    </div>
                 </nav>
 
                 {/* ========== HERO SECTION ========== */}
                 <section className="relative overflow-hidden">
-                    {/* ---- Halloween night sky ---- */}
+                    {/* ---- Simbang Gabi night sky ---- */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                        {/* glows */}
-                        <div className="absolute -top-28 -left-24 w-[26rem] h-[26rem] bg-purple-700/25 rounded-full blur-3xl" />
-                        <div className="absolute top-10 -right-32 w-[30rem] h-[30rem] bg-orange-600/15 rounded-full blur-3xl" />
-                        <div className="absolute bottom-0 left-1/3 w-[24rem] h-[24rem] bg-fuchsia-700/15 rounded-full blur-3xl" />
+                        {/* warm ambient glows */}
+                        <div className="absolute -top-28 -left-24 w-[28rem] h-[28rem] bg-amber-500/20 rounded-full blur-3xl animate-[glowpulse_9s_ease-in-out_infinite]" />
+                        <div className="absolute top-10 -right-32 w-[32rem] h-[32rem] bg-red-600/15 rounded-full blur-3xl animate-[glowpulse_11s_ease-in-out_infinite]" />
+                        <div className="absolute bottom-0 left-1/3 w-[26rem] h-[26rem] bg-emerald-600/15 rounded-full blur-3xl animate-[glowpulse_13s_ease-in-out_infinite]" />
 
-                        {/* moon */}
-                        <div className="absolute top-16 right-6 sm:right-16 w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-amber-50 to-amber-300 opacity-90 shadow-[0_0_70px_12px_rgba(251,191,36,0.22)]">
-                            <span className="absolute top-4 left-5 w-4 h-4 rounded-full bg-amber-400/40" />
-                            <span className="absolute bottom-6 right-5 w-5 h-5 rounded-full bg-amber-400/30" />
-                            <span className="absolute top-10 right-9 w-2.5 h-2.5 rounded-full bg-amber-400/40" />
-                        </div>
-
-                        {/* stars */}
+                        {/* distant twinkling stars */}
                         {stars.map((star, i) => (
                             <span
                                 key={i}
-                                className="absolute rounded-full bg-white animate-[twinkle_3.4s_ease-in-out_infinite]"
+                                className="absolute rounded-full bg-amber-100 animate-[twinkle_3.4s_ease-in-out_infinite]"
                                 style={{
                                     top: star.top,
                                     left: star.left,
@@ -248,86 +386,83 @@ export default function Welcome({ auth }) {
                             />
                         ))}
 
-                        {/* cobweb — top-left */}
-                        <svg
-                            viewBox="0 0 100 100"
-                            className="absolute -top-2 -left-2 w-32 h-32 sm:w-48 sm:h-48 text-white/[0.08]"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="0.8"
-                        >
-                            <path d="M0 0 L92 92" />
-                            <path d="M0 0 L100 42" />
-                            <path d="M0 0 L42 100" />
-                            <path d="M0 0 L100 12" />
-                            <path d="M22 4 Q15 15 6 22" />
-                            <path d="M42 8 Q30 30 10 42" />
-                            <path d="M62 12 Q44 44 14 62" />
-                            <path d="M82 16 Q58 58 18 82" />
-                        </svg>
+                        {/* drifting golden light motes */}
+                        {motes.map((m, i) => (
+                            <span
+                                key={`mote-${i}`}
+                                className="absolute rounded-full bg-amber-300 shadow-[0_0_12px_2px_rgba(251,191,36,0.55)]"
+                                style={{
+                                    left: `${m.left}%`,
+                                    top: `${m.top}%`,
+                                    width: m.size,
+                                    height: m.size,
+                                    animation: `warmfloat ${m.duration}s ease-in-out infinite`,
+                                    animationDelay: `${m.delay}s`,
+                                }}
+                            />
+                        ))}
 
-                        {/* bats */}
-                        <Bat
-                            className="absolute top-24 left-[10%] w-10 sm:w-14 text-orange-500/30 animate-[floaty_9s_ease-in-out_infinite]"
+                        {/* floating parols — the heart of Filipino Christmas */}
+                        <Parol
+                            className="absolute top-14 right-[6%] w-14 sm:w-20 text-amber-300/80 drop-shadow-[0_0_24px_rgba(251,191,36,0.5)] animate-[sway_7s_ease-in-out_infinite]"
                             style={{ animationDelay: '0s' }}
                         />
-                        <Bat
-                            className="absolute top-48 left-[46%] w-8 sm:w-10 text-purple-400/25 animate-[floaty_11s_ease-in-out_infinite]"
-                            style={{ animationDelay: '1.5s' }}
+                        <Parol
+                            className="absolute top-40 left-[4%] w-10 sm:w-14 opacity-70 drop-shadow-[0_0_18px_rgba(251,191,36,0.4)] animate-[sway_9s_ease-in-out_infinite]"
+                            style={{ animationDelay: '1.4s' }}
                         />
-                        <Bat
-                            className="absolute top-12 right-[28%] w-6 sm:w-9 text-orange-300/25 animate-[floaty_13s_ease-in-out_infinite]"
-                            style={{ animationDelay: '3s' }}
-                        />
-
-                        {/* floating ghost */}
-                        <Ghost
-                            className="absolute bottom-24 left-[8%] w-8 h-8 text-white/[0.07] animate-[floaty_12s_ease-in-out_infinite]"
-                            style={{ animationDelay: '2s' }}
+                        <Parol
+                            className="absolute bottom-28 right-[22%] w-8 sm:w-12 opacity-55 drop-shadow-[0_0_14px_rgba(251,191,36,0.35)] animate-[sway_11s_ease-in-out_infinite]"
+                            style={{ animationDelay: '2.6s' }}
                         />
 
-                        {/* ground fog */}
-                        <div className="absolute -bottom-16 left-0 right-0 h-48 bg-gradient-to-t from-orange-900/20 via-purple-900/10 to-transparent blur-2xl animate-[drift_16s_ease-in-out_infinite_alternate]" />
+                        {/* warm horizon light */}
+                        <div className="absolute -bottom-16 left-0 right-0 h-48 bg-gradient-to-t from-amber-800/20 via-amber-700/8 to-transparent blur-2xl animate-[drift_18s_ease-in-out_infinite_alternate]" />
                     </div>
 
                     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-24">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
                             {/* ---- LEFT CONTENT ---- */}
                             <div className="space-y-6 order-2 lg:order-1">
-                                <div className="inline-flex items-center space-x-2 bg-orange-500/10 border border-orange-400/30 rounded-full px-4 py-1.5 backdrop-blur-sm">
-                                    <Sparkles className="h-4 w-4 text-orange-400" />
-                                    <span className="text-[10px] sm:text-xs font-bold text-orange-200 tracking-[0.18em]">
-                                        OFFICIAL GOVERNMENT SYSTEM
+                                <div className="inline-flex items-center space-x-2 bg-red-500/10 border border-amber-400/30 rounded-full px-4 py-1.5 backdrop-blur-sm">
+                                    <Sparkles className="h-4 w-4 text-amber-300" />
+                                    <span className="text-[10px] sm:text-xs font-bold text-amber-200 tracking-[0.18em]">
+                                        MALIGAYANG PASKO • SIMBANG GABI 2026
                                     </span>
                                 </div>
 
-                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight text-white">
-                                    Smart Attendance
-                                    <br />
-                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-amber-300 to-orange-400 drop-shadow-[0_0_25px_rgba(249,115,22,0.35)]">
-                                        for Public Servants
-                                    </span>
-                                </h1>
+                                <div>
+                                    <p className="font-serif italic text-amber-200/90 text-sm sm:text-base mb-2">
+                                        Maligayang Pasko!
+                                    </p>
+                                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight text-white">
+                                        Smart Attendance
+                                        <br />
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-300 to-red-400 drop-shadow-[0_0_25px_rgba(251,191,36,0.35)]">
+                                            for Public Servants
+                                        </span>
+                                    </h1>
+                                </div>
 
                                 <p className="text-base sm:text-lg text-slate-300/80 max-w-md leading-relaxed">
                                     Secure QR check‑ins, real‑time monitoring, and accurate
                                     records — all in one seamless system.{' '}
-                                    <span className="text-orange-300/90 font-medium">
-                                        No tricks, just treats.
+                                    <span className="text-amber-300/90 font-medium">
+                                        Maligayang Pasko mula sa amin sa HR!
                                     </span>
                                 </p>
 
                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                                     <Link
                                         href={route('login')}
-                                        className="group inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold rounded-2xl shadow-[0_0_35px_-8px_rgba(249,115,22,0.9)] transition-all text-sm sm:text-base"
+                                        className="group inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-2xl ring-1 ring-amber-300/40 shadow-[0_0_35px_-8px_rgba(239,68,68,0.9)] transition-all text-sm sm:text-base"
                                     >
                                         <Scan className="mr-2 h-5 w-5" />
                                         Check In Now
                                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition" />
                                     </Link>
                                     <button
-                                        className="inline-flex items-center justify-center px-6 py-3.5 bg-white/5 backdrop-blur-sm border border-white/15 text-orange-100 font-semibold rounded-2xl hover:bg-white/10 hover:border-orange-400/40 transition text-sm sm:text-base"
+                                        className="inline-flex items-center justify-center px-6 py-3.5 bg-white/5 backdrop-blur-sm border border-white/15 text-amber-100 font-semibold rounded-2xl hover:bg-white/10 hover:border-amber-400/40 transition text-sm sm:text-base"
                                         onClick={() => alert('Learn More clicked')}
                                     >
                                         <Play className="mr-2 h-4 w-4" />
@@ -343,7 +478,7 @@ export default function Welcome({ auth }) {
                                         { icon: Users, label: 'Multi‑Dept' },
                                     ].map(({ icon: Icon, label }) => (
                                         <div key={label} className="flex items-center space-x-2">
-                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-orange-400/20 flex items-center justify-center text-orange-400">
+                                            <div className="w-8 h-8 rounded-full bg-white/5 border border-amber-400/20 flex items-center justify-center text-amber-300">
                                                 <Icon className="h-4 w-4" />
                                             </div>
                                             <span className="font-medium text-slate-200">
@@ -357,16 +492,17 @@ export default function Welcome({ auth }) {
                             {/* ---- RIGHT QR CARD ---- */}
                             <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
                                 <div className="relative w-full max-w-sm">
-                                    {/* glowing aura */}
-                                    <div className="absolute -inset-2 bg-gradient-to-br from-orange-500/40 via-fuchsia-500/10 to-purple-600/40 rounded-[2rem] blur-2xl opacity-60" />
+                                    {/* warm parol aura */}
+                                    <div className="absolute -inset-3 bg-gradient-to-br from-amber-500/40 via-red-500/15 to-emerald-500/30 rounded-[2rem] blur-2xl opacity-70 animate-[glowpulse_8s_ease-in-out_infinite]" />
 
-                                    <div className="relative bg-[#150b24]/85 backdrop-blur-xl rounded-3xl border border-orange-400/25 shadow-2xl shadow-black/50 p-6 sm:p-8">
+                                    <div className="relative bg-[#0a1f2a]/90 backdrop-blur-xl rounded-3xl border border-amber-400/25 shadow-2xl shadow-black/50 p-6 sm:p-8">
                                         <div className="text-center mb-5">
-                                            <div className="relative w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-[0_0_30px_-4px_rgba(249,115,22,0.9)]">
-                                                <Scan className="h-8 w-8 text-white" />
-                                                <span className="absolute -inset-1 rounded-full border border-orange-300/40 animate-[flicker_2.6s_ease-in-out_infinite]" />
+                                            {/* parol hovering above the card */}
+                                            <div className="relative w-20 h-24 mx-auto mb-1">
+                                                <div className="absolute inset-0 rounded-full bg-amber-400/30 blur-2xl" />
+                                                <Parol className="relative w-full h-full drop-shadow-[0_0_20px_rgba(251,191,36,0.55)] animate-[sway_6s_ease-in-out_infinite]" />
                                             </div>
-                                            <h3 className="text-xl font-bold text-white mt-3">
+                                            <h3 className="text-xl font-bold text-white">
                                                 Quick Check‑In
                                             </h3>
                                             <p className="text-sm text-slate-400">
@@ -376,42 +512,39 @@ export default function Welcome({ auth }) {
 
                                         {/* QR Code with scanning animation */}
                                         <div className="relative flex justify-center mb-5">
-                                            <div className="relative inline-block p-2.5 bg-white rounded-2xl shadow-[0_0_40px_-10px_rgba(249,115,22,0.7)]">
+                                            <div className="relative inline-block p-2.5 bg-white rounded-2xl shadow-[0_0_40px_-10px_rgba(251,191,36,0.8)]">
                                                 <img
                                                     src={qrImageUrl}
                                                     alt="QR Code"
                                                     className="w-36 h-36 sm:w-40 sm:h-40 rounded-lg"
                                                 />
-                                                <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-orange-500 rounded-tl-xl" />
-                                                <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-orange-500 rounded-tr-xl" />
-                                                <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-orange-500 rounded-bl-xl" />
-                                                <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-orange-500 rounded-br-xl" />
-                                                {/* scanning line */}
+                                                <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-red-600 rounded-tl-xl" />
+                                                <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-red-600 rounded-tr-xl" />
+                                                <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-red-600 rounded-bl-xl" />
+                                                <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-red-600 rounded-br-xl" />
                                                 <div className="absolute inset-2.5 overflow-hidden rounded-lg pointer-events-none">
-                                                    <div className="absolute left-0 right-0 h-0.5 bg-orange-500 shadow-[0_0_12px_2px_rgba(249,115,22,0.9)] animate-[scan_2.4s_ease-in-out_infinite]" />
+                                                    <div className="absolute left-0 right-0 h-0.5 bg-red-600 shadow-[0_0_12px_2px_rgba(239,68,68,0.9)] animate-[scan_2.4s_ease-in-out_infinite]" />
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* live date/time */}
                                         <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 mb-3">
-                                            <Calendar className="h-3.5 w-3.5 text-orange-400/80" />
+                                            <Calendar className="h-3.5 w-3.5 text-amber-400/80" />
                                             <span>{formattedDate}</span>
-                                            <span className="text-orange-400/40">•</span>
-                                            <Clock className="h-3.5 w-3.5 text-orange-400/80" />
-                                            <span className="tabular-nums text-orange-200/90">
+                                            <span className="text-amber-400/40">•</span>
+                                            <Clock className="h-3.5 w-3.5 text-amber-400/80" />
+                                            <span className="tabular-nums text-amber-200/90">
                                                 {formattedTime}
                                             </span>
                                         </div>
 
                                         <div className="bg-white/5 rounded-xl p-3 flex items-center justify-center space-x-2 border border-white/10">
-                                            <Camera className="h-5 w-5 text-orange-400" />
+                                            <Camera className="h-5 w-5 text-amber-300" />
                                             <span className="text-sm font-medium text-slate-200">
                                                 Open camera &amp; scan
                                             </span>
                                         </div>
 
-                                        {/* Quick stats mini cards */}
                                         <div className="grid grid-cols-3 gap-2 mt-5">
                                             <div className="bg-white/5 rounded-xl p-3 text-center border border-white/10">
                                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -421,11 +554,11 @@ export default function Welcome({ auth }) {
                                                     {stats.checkIns}
                                                 </p>
                                             </div>
-                                            <div className="bg-orange-500/10 rounded-xl p-3 text-center border border-orange-400/25">
-                                                <p className="text-[10px] font-bold text-orange-300/80 uppercase tracking-wider">
+                                            <div className="bg-amber-500/10 rounded-xl p-3 text-center border border-amber-400/25">
+                                                <p className="text-[10px] font-bold text-amber-300/80 uppercase tracking-wider">
                                                     Rate
                                                 </p>
-                                                <p className="text-lg font-bold text-orange-400">
+                                                <p className="text-lg font-bold text-amber-300">
                                                     {stats.attendancePercent}%
                                                 </p>
                                             </div>
@@ -445,7 +578,7 @@ export default function Welcome({ auth }) {
 
                         {/* ---- Bottom stats bar ---- */}
                         <div className="mt-12 lg:mt-16">
-                            <div className="bg-white/[0.04] backdrop-blur-md rounded-2xl border border-white/10 shadow-xl shadow-black/30 p-4 sm:p-6 grid grid-cols-3 divide-x divide-white/10">
+                            <div className="bg-white/[0.04] backdrop-blur-md rounded-2xl border border-amber-400/15 shadow-xl shadow-black/30 p-4 sm:p-6 grid grid-cols-3 divide-x divide-white/10">
                                 <div className="text-center">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                         System
@@ -461,7 +594,7 @@ export default function Welcome({ auth }) {
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                         Check‑Ins
                                     </p>
-                                    <p className="text-sm font-bold text-orange-300 mt-1">
+                                    <p className="text-sm font-bold text-amber-300 mt-1">
                                         {stats.checkIns}
                                     </p>
                                 </div>
@@ -480,7 +613,7 @@ export default function Welcome({ auth }) {
                     {/* Wave divider into footer */}
                     <div className="relative h-8 sm:h-12">
                         <svg
-                            className="absolute bottom-0 w-full h-8 sm:h-12 text-[#08040f] fill-current"
+                            className="absolute bottom-0 w-full h-8 sm:h-12 text-[#041016] fill-current"
                             viewBox="0 0 1440 48"
                             preserveAspectRatio="none"
                         >
@@ -490,33 +623,33 @@ export default function Welcome({ auth }) {
                 </section>
 
                 {/* ========== FOOTER ========== */}
-                <footer className="bg-[#08040f] text-white border-t border-orange-500/10">
+                <footer className="bg-[#041016] text-white border-t border-amber-400/10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 pb-28 lg:pb-16">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                             {/* Brand */}
                             <div>
                                 <div className="flex items-center space-x-3 mb-4">
-                                    <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-[0_0_20px_-4px_rgba(249,115,22,0.8)]">
-                                        <Scan className="h-5 w-5" />
+                                    <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 shadow-[0_0_20px_-4px_rgba(239,68,68,0.8)]">
+                                        <ParolMark className="h-6 w-6" />
                                     </div>
                                     <div>
                                         <span className="text-xl font-extrabold tracking-tight">
                                             HRIS
                                         </span>
-                                        <span className="block text-[8px] font-bold uppercase tracking-[0.2em] text-orange-300/70 -mt-0.5">
+                                        <span className="block text-[8px] font-bold uppercase tracking-[0.2em] text-amber-300/70 -mt-0.5">
                                             Attendance System
                                         </span>
                                     </div>
                                 </div>
                                 <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
                                     Smart attendance for public servants. Accountability
-                                    meets efficiency.
+                                    meets efficiency — this Pasko and beyond.
                                 </p>
                             </div>
 
                             {/* Quick links */}
                             <div>
-                                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-orange-300/80 mb-4">
+                                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300/80 mb-4">
                                     Quick Links
                                 </h4>
                                 <ul className="space-y-2.5">
@@ -524,7 +657,7 @@ export default function Welcome({ auth }) {
                                         <li key={link.name}>
                                             <Link
                                                 href={link.href}
-                                                className="text-sm text-slate-400 hover:text-orange-300 transition"
+                                                className="text-sm text-slate-400 hover:text-amber-300 transition"
                                             >
                                                 {link.name}
                                             </Link>
@@ -535,7 +668,7 @@ export default function Welcome({ auth }) {
 
                             {/* System */}
                             <div>
-                                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-orange-300/80 mb-4">
+                                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300/80 mb-4">
                                     System
                                 </h4>
                                 <ul className="space-y-2.5 text-sm text-slate-400">
@@ -556,20 +689,20 @@ export default function Welcome({ auth }) {
 
                             {/* Contact */}
                             <div>
-                                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-orange-300/80 mb-4">
+                                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300/80 mb-4">
                                     Contact
                                 </h4>
                                 <ul className="space-y-3 text-sm text-slate-400">
                                     <li className="flex items-start gap-2.5">
-                                        <Mail className="h-4 w-4 text-orange-400/80 mt-0.5 shrink-0" />
+                                        <Mail className="h-4 w-4 text-amber-400/80 mt-0.5 shrink-0" />
                                         <span>hris@lgu.gov.ph</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
-                                        <Phone className="h-4 w-4 text-orange-400/80 mt-0.5 shrink-0" />
+                                        <Phone className="h-4 w-4 text-amber-400/80 mt-0.5 shrink-0" />
                                         <span>(02) 8888‑0000</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
-                                        <MapPin className="h-4 w-4 text-orange-400/80 mt-0.5 shrink-0" />
+                                        <MapPin className="h-4 w-4 text-amber-400/80 mt-0.5 shrink-0" />
                                         <span>Municipal Hall, HR Office</span>
                                     </li>
                                 </ul>
@@ -581,9 +714,9 @@ export default function Welcome({ auth }) {
                                 © {new Date().getFullYear()} HRIS — Local Government
                                 Unit. All rights reserved.
                             </p>
-                            <p className="flex items-center gap-1.5">
-                                <Ghost className="h-3.5 w-3.5 text-orange-400/70" />
-                                Happy Halloween from the HR Team 🎃
+                            <p className="flex items-center gap-1.5 font-serif italic text-amber-200/70">
+                                <Star className="h-3.5 w-3.5 text-amber-400/80" />
+                                Maligayang Pasko at Manigong Bagong Taon 🎄
                             </p>
                         </div>
                     </div>
@@ -593,7 +726,7 @@ export default function Welcome({ auth }) {
                 <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm">
                     <Link
                         href={route('login')}
-                        className="flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-2xl shadow-[0_10px_40px_-8px_rgba(249,115,22,0.9)] active:scale-[0.98] transition-all text-base"
+                        className="flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold rounded-2xl ring-1 ring-amber-300/40 shadow-[0_10px_40px_-8px_rgba(239,68,68,0.9)] active:scale-[0.98] transition-all text-base"
                     >
                         <Scan className="mr-2 h-5 w-5" />
                         Check In Now
@@ -608,21 +741,33 @@ export default function Welcome({ auth }) {
                         50%  { top: calc(100% - 2px); }
                         100% { top: 0; }
                     }
-                    @keyframes floaty {
-                        0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-                        50%      { transform: translate3d(10px, -14px, 0) rotate(-4deg); }
+                    @keyframes sway {
+                        0%, 100% { transform: rotate(-3deg) translateY(0); }
+                        50%      { transform: rotate(3deg) translateY(-6px); }
+                    }
+                    @keyframes flagsway {
+                        0%, 100% { transform: rotate(-2deg); }
+                        50%      { transform: rotate(2deg); }
                     }
                     @keyframes twinkle {
                         0%, 100% { opacity: 0.15; transform: scale(0.8); }
                         50%      { opacity: 1; transform: scale(1.2); }
                     }
+                    @keyframes warmfloat {
+                        0%, 100% { transform: translate3d(0, 0, 0) scale(0.85); opacity: 0.2; }
+                        50%      { transform: translate3d(8px, -20px, 0) scale(1.15); opacity: 0.9; }
+                    }
                     @keyframes flicker {
                         0%, 100% { opacity: 0.35; }
                         50%      { opacity: 0.9; }
                     }
+                    @keyframes glowpulse {
+                        0%, 100% { opacity: 0.45; transform: scale(0.96); }
+                        50%      { opacity: 0.8;  transform: scale(1.04); }
+                    }
                     @keyframes drift {
-                        from { transform: translateX(-6%); }
-                        to   { transform: translateX(6%); }
+                        from { transform: translateX(-5%); }
+                        to   { transform: translateX(5%); }
                     }
                     @media (prefers-reduced-motion: reduce) {
                         *, *::before, *::after {
