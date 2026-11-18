@@ -99,6 +99,8 @@ inputFocus: 'focus:border-navy-500 focus:ring-navy-500',
     // Add to each theme:
 inputFocus: 'focus:border-navy-500 focus:ring-navy-500',
   },
+
+
   green: {
     primary: 'green',
     bgGradient: 'from-green-700 to-green-800',
@@ -139,6 +141,26 @@ inputFocus: 'focus:border-navy-500 focus:ring-navy-500',
     // Add to each theme:
 inputFocus: 'focus:border-navy-500 focus:ring-navy-500',
   },
+
+ christmas: {
+  primary: 'christmas',
+  bgGradient: 'from-red-900 via-red-800 to-emerald-900',
+  bgSolid: 'bg-gradient-to-br from-red-900 via-red-800 to-emerald-900',
+  textAccent: 'text-amber-200',
+  textLight: 'text-amber-100',
+  bgCard: 'bg-amber-50',
+  textCard: 'text-red-800',
+  textHeading: 'text-red-900',
+  bgButton: 'bg-red-800',
+  hoverButton: 'hover:bg-red-900',
+  borderButton: 'border-red-800',
+  bgBadge: 'bg-amber-100',
+  textBadge: 'text-amber-800',
+  bgCardLight: 'bg-amber-50',
+  icon: 'text-red-700',
+  activePagination: 'bg-red-800 text-white',
+  inputFocus: 'focus:border-red-500 focus:ring-red-500',
+},
 };
 
 export function getTheme(themeName = 'navy') {

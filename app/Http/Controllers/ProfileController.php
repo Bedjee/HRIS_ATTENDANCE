@@ -97,7 +97,7 @@ class ProfileController extends Controller
    public function updateTheme(Request $request)
 {
     $request->validate([
-        'theme' => ['required', 'in:navy,crimson,brown,black,yellow,green,violet'],
+        'theme' => ['required', 'string', 'in:navy,crimson,brown,black,yellow,green,violet,christmas'],
     ]);
     $user = $request->user();
     $user->theme = $request->theme;

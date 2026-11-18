@@ -108,6 +108,19 @@ export default {
                     900: '#4c1d95',
                     950: '#2e1065',
                 },
+                 christmas: {
+        50:  '#fff5f5',
+        100: '#ffe3e3',
+        200: '#ffc9c9',
+        300: '#ffa8a8',
+        400: '#ff7070',
+        500: '#f03e3e',
+        600: '#e03131',
+        700: '#c92a2a', // main festive red
+        800: '#a61e1e', // deep parol red
+        900: '#8a1c1c',
+        950: '#4a0c0c',
+      },
             },
         },
     },

@@ -3,15 +3,16 @@ import { Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ThemePicker({ currentTheme }) {
-    const themes = [
-        { name: 'navy', label: 'Navy', color: 'bg-navy-800' },
-        { name: 'crimson', label: 'Crimson', color: 'bg-crimson-800' },
-        { name: 'brown', label: 'Brown', color: 'bg-brown-800' },
-        { name: 'black', label: 'Black', color: 'bg-black-800' },
-        { name: 'yellow', label: 'Yellow', color: 'bg-yellow-800' },
-        { name: 'green', label: 'Green', color: 'bg-green-800' },
-        { name: 'violet', label: 'Violet', color: 'bg-violet-800' },
-    ];
+const themes = [
+  { name: 'navy',      label: 'Navy',      color: 'bg-navy-800' },
+  { name: 'crimson',   label: 'Crimson',   color: 'bg-crimson-800' },
+  { name: 'brown',     label: 'Brown',     color: 'bg-brown-800' },
+  { name: 'black',     label: 'Black',     color: 'bg-black-800' },
+  { name: 'yellow',    label: 'Yellow',    color: 'bg-yellow-800' },
+  { name: 'green',     label: 'Green',     color: 'bg-green-800' },
+  { name: 'violet',    label: 'Violet',    color: 'bg-violet-800' },
+  { name: 'christmas', label: 'Christmas', color: 'bg-gradient-to-br from-christmas-700 via-christmas-800 to-emerald-800' },
+];
 
     const selectTheme = (theme) => {
         router.patch(
